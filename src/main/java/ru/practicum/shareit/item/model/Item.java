@@ -16,7 +16,6 @@ public class Item {
     private Long id;
     private String name;
     private String description;
-    @JsonProperty("available")
     private Boolean isAvailable;
     //private Long ownerId;
     private User owner;
