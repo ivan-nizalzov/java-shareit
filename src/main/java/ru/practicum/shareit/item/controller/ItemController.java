@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
@@ -13,35 +14,34 @@ import java.util.Locale;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/items")
 public class ItemController {
-
     private final ItemService itemService;
 
     @PostMapping
-    public ItemDto createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+    public ResponseEntity<ItemDto> createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                               @RequestBody ItemDto itemDto) {
-        return itemService.createItem(itemDto, userId);
+        return ResponseEntity.ok().body(itemService.createItem(itemDto, userId));
     }
 
     @PatchMapping("/{itemId}")
-    public ItemDto updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
+    public ResponseEntity<ItemDto> updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
                               @PathVariable("itemId") Long itemId,
                               @RequestBody ItemDto itemDto) {
-        return itemService.updateItem(itemId, userId, itemDto);
+        return ResponseEntity.ok().body(itemService.updateItem(itemId, userId, itemDto));
     }
 
     @GetMapping("/{itemId}")
-    public ItemDto getItemById(@PathVariable("itemId") Long itemId) {
-        return itemService.getItemById(itemId);
+    public ResponseEntity<ItemDto> getItemById(@PathVariable("itemId") Long itemId) {
+        return ResponseEntity.ok().body(itemService.getItemById(itemId));
     }
 
     @GetMapping
-    public List<ItemDto> getAllItemsOfUser(@RequestHeader("X-Sharer-User-Id") long userId) {
-        return itemService.getAllItemsOfUser(userId);
+    public ResponseEntity<List<ItemDto>> getAllItemsOfUser(@RequestHeader("X-Sharer-User-Id") long userId) {
+        return ResponseEntity.ok().body(itemService.getAllItemsOfUser(userId));
     }
 
     @GetMapping("/search")
-    public List<ItemDto> searchItem(@RequestParam("text") String searchQuery) {
-        return itemService.searchItem(searchQuery.toLowerCase(Locale.ROOT));
+    public ResponseEntity<List<ItemDto>> searchItem(@RequestParam("text") String searchQuery) {
+        return ResponseEntity.ok().body(itemService.searchItem(searchQuery.toLowerCase(Locale.ROOT)));
     }
 
 }

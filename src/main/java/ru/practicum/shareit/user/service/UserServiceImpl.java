@@ -8,6 +8,7 @@ import ru.practicum.shareit.exception.AlreadyExistsEmailException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.dto.UserDtoMapper;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.user.validator.UserValidator;
@@ -21,22 +22,25 @@ import java.util.stream.Collectors;
 @Service
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Override
     public UserDto createUser(UserDto userDto) {
         UserValidator.validateUser(userDto);
-        checkEmail(UserDtoMapper.dtoToUser(userDto));
+        checkEmail(userMapper.convertDtoToUser(userDto));
 
-        User user = userRepository.createUser(UserDtoMapper.dtoToUser(userDto));
+        User userFromResponse = userMapper.convertDtoToUser(userDto);
+        User createdUser = userRepository.createUser(userFromResponse);
 
-        return UserDtoMapper.toUserDto(user);
+        return userMapper.convertUserToDto(createdUser);
     }
 
     @Override
     public UserDto updateUser(Long userId, UserDto userDto) {
         Optional<String> userEmail = Optional.ofNullable(userDto.getEmail());
+        User updatedUserFields = userMapper.convertDtoToUser(userDto);
         if (userEmail.isPresent()) {
-            checkEmail(UserDtoMapper.dtoToUser(userDto), userId);
+            checkEmail(updatedUserFields, userId);
         }
 
         User oldUser = userRepository.getUserById(userId);
@@ -49,14 +53,14 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.updateUser(updatedUser);
 
-        return UserDtoMapper.toUserDto(user);
+        return userMapper.convertUserToDto(user);
     }
 
     @Override
     public List<UserDto> getAllUsers() {
         return userRepository.getAllUsers()
                 .stream()
-                .map(UserDtoMapper::toUserDto)
+                .map(userMapper::convertUserToDto)
                 .collect(Collectors.toList());
     }
 
@@ -65,7 +69,7 @@ public class UserServiceImpl implements UserService {
         User user = Optional.ofNullable(userRepository.getUserById(userId)).orElseThrow(() ->
                 new NotFoundException("Пользователь с id=" + userId + " не найден"));
 
-        return UserDtoMapper.toUserDto(user);
+        return userMapper.convertUserToDto(user);
     }
 
     @Override

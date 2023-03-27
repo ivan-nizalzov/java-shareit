@@ -49,7 +49,7 @@ public class InMemoryItemRepository implements ItemRepository {
 
         return items.values()
                 .stream()
-                .filter(s -> s.getOwnerId().equals(userId))
+                .filter(s -> s.getOwner().getId().equals(userId))
                 .collect(Collectors.toList());
     }
 

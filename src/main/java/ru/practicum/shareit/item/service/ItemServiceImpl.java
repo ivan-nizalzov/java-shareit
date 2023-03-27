@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.ForbiddenAccessException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemDtoMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.item.validator.ItemValidator;
 
@@ -23,22 +25,28 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final UserService userService;
+    private final UserMapper userMapper;
+    private final ItemMapper itemMapper;
 
     @Override
     public ItemDto createItem(ItemDto itemDto, Long userId) {
         ItemValidator.validateItem(itemDto);
         checkUserInDb(userId);
 
-        Item item = itemRepository.createItem(ItemDtoMapper.dtoToItem(itemDto, userId, null));
+        Item item = itemMapper.convertDtoToItem(itemDto);
+        User owner = userMapper.convertDtoToUser(userService.getUserById(userId));
+        item.setOwner(owner);
+        item.setRequest(null);
+        Item createdItem = itemRepository.createItem(item);
 
-        return ItemDtoMapper.toItemDto(item);
+        return itemMapper.convertItemToDto(createdItem);
     }
 
     @Override
     public ItemDto updateItem(Long itemId, Long userId, ItemDto itemDto) {
         Item oldItem = itemRepository.getItemById(itemId);
 
-        if (!oldItem.getOwnerId().equals(userId)) {
+        if (!oldItem.getOwner().getId().equals(userId)) {
             throw new ForbiddenAccessException("Предмет с id=" + itemId + " не может быть отредактирован пользователем" +
                     " с id=" + userId);
         }
@@ -48,13 +56,13 @@ public class ItemServiceImpl implements ItemService {
                 .name(itemDto.getName() != null ? itemDto.getName() : oldItem.getName())
                 .description(itemDto.getDescription() != null ? itemDto.getDescription() : oldItem.getDescription())
                 .isAvailable(itemDto.getIsAvailable() != null ? itemDto.getIsAvailable() : oldItem.getIsAvailable())
-                .ownerId(oldItem.getOwnerId())
+                .owner(oldItem.getOwner())
                 .request(oldItem.getRequest())
                 .build();
 
         Item item = itemRepository.updateItem(editedItem);
 
-        return ItemDtoMapper.toItemDto(item);
+        return itemMapper.convertItemToDto(item);
     }
 
     @Override
@@ -64,14 +72,14 @@ public class ItemServiceImpl implements ItemService {
             throw new NotFoundException("Предмет с id=" + itemId + " не найден");
         }
 
-        return ItemDtoMapper.toItemDto(itemRepository.getItemById(itemId));
+        return itemMapper.convertItemToDto(itemRepository.getItemById(itemId));
     }
 
     @Override
     public List<ItemDto> getAllItemsOfUser(Long userId) {
         return itemRepository.getAllItemsOfUser(userId)
                 .stream()
-                .map(ItemDtoMapper::toItemDto)
+                .map(itemMapper::convertItemToDto)
                 .collect(Collectors.toList());
     }
 
@@ -83,7 +91,7 @@ public class ItemServiceImpl implements ItemService {
 
         return itemRepository.searchItem(searchQuery)
                 .stream()
-                .map(ItemDtoMapper::toItemDto)
+                .map(itemMapper::convertItemToDto)
                 .collect(Collectors.toList());
     }
 
