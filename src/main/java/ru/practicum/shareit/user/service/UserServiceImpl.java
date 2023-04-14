@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exception.AlreadyExistsEmailException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserDtoMapper;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.dao.UserDAO;
 import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.user.validator.UserValidator;
 
@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Service
 public class UserServiceImpl implements UserService {
+    //private final UserDAO userDAO;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
 
@@ -30,7 +31,8 @@ public class UserServiceImpl implements UserService {
         checkEmail(userMapper.convertDtoToUser(userDto));
 
         User userFromResponse = userMapper.convertDtoToUser(userDto);
-        User createdUser = userRepository.createUser(userFromResponse);
+        //User createdUser = userDAO.createUser(userFromResponse);
+        User createdUser = userRepository.save(userFromResponse);
 
         return userMapper.convertUserToDto(createdUser);
     }
@@ -43,7 +45,9 @@ public class UserServiceImpl implements UserService {
             checkEmail(updatedUserFields, userId);
         }
 
-        User oldUser = userRepository.getUserById(userId);
+        //User oldUser = userDAO.getUserById(userId);
+        User oldUser = userRepository.findById(userId).orElseThrow(
+                () -> new NotFoundException("Пользователь с id=" + userId + " не найден в БД"));
 
         User updatedUser = User.builder()
                 .id(userId)
@@ -51,14 +55,19 @@ public class UserServiceImpl implements UserService {
                 .email(userDto.getEmail() != null ? userDto.getEmail() : oldUser.getEmail())
                 .build();
 
-        User user = userRepository.updateUser(updatedUser);
+        //User user = userDAO.updateUser(updatedUser);
+        User user = userRepository.save(updatedUser);
 
         return userMapper.convertUserToDto(user);
     }
 
     @Override
     public List<UserDto> getAllUsers() {
-        return userRepository.getAllUsers()
+        /*return userDAO.getAllUsers()
+                .stream()
+                .map(userMapper::convertUserToDto)
+                .collect(Collectors.toList());*/
+        return userRepository.findAll()
                 .stream()
                 .map(userMapper::convertUserToDto)
                 .collect(Collectors.toList());
@@ -66,19 +75,28 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserById(Long userId) {
-        User user = Optional.ofNullable(userRepository.getUserById(userId)).orElseThrow(() ->
+        /*User user = Optional.ofNullable(userDAO.getUserById(userId)).orElseThrow(() ->
+                new NotFoundException("Пользователь с id=" + userId + " не найден"));*/
+
+        Optional<User> user = Optional.ofNullable(userRepository.findById(userId)).orElseThrow(() ->
                 new NotFoundException("Пользователь с id=" + userId + " не найден"));
 
-        return userMapper.convertUserToDto(user);
+        return userMapper.convertUserToDto(user.get());
     }
 
     @Override
     public void deleteUser(Long id) {
-        userRepository.deleteUser(id);
+        //userDAO.deleteUser(id);
+        userRepository.deleteById(id);
     }
 
     private void checkEmail(User editedUser) {
-        List<User> userList = userRepository.getAllUsers()
+       /* List<User> userList = userDAO.getAllUsers()
+                .stream()
+                .filter(u -> u.getEmail().equals(editedUser.getEmail()))
+                .collect(Collectors.toList());*/
+
+        List<User> userList = userRepository.findAll()
                 .stream()
                 .filter(u -> u.getEmail().equals(editedUser.getEmail()))
                 .collect(Collectors.toList());

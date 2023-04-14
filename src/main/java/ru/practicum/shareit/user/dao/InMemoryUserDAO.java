@@ -1,4 +1,4 @@
-package ru.practicum.shareit.user.repository;
+package ru.practicum.shareit.user.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class InMemoryUserRepository implements UserRepository {
+public class InMemoryUserDAO implements UserDAO {
     private final Map<Long, User> users;
     private static final AtomicLong id = new AtomicLong(0);
 

@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item.repository;
+package ru.practicum.shareit.item.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class InMemoryItemRepository implements ItemRepository {
+public class InMemoryItemDAO implements ItemDAO {
     private final Map<Long, Item> items;
     private static final AtomicLong id = new AtomicLong(0);
 
