@@ -28,6 +28,9 @@ public class BookingServiceImpl implements BookingService {
     private final BookingRepository bookingRepository;
     private final UserServiceImpl userServiceImpl;
     private final ItemServiceImpl itemServiceImpl;
+    private final BookingMapper bookingMapper;
+    private final UserMapper userMapper;
+    private final ItemMapper itemMapper;
 
     @Transactional
     @Override
@@ -39,8 +42,8 @@ public class BookingServiceImpl implements BookingService {
                             bookingDtoShort.getStart(), bookingDtoShort.getEnd()));
         }
 
-        User booker = UserMapper.toUser(userServiceImpl.findUserById(bookerId));
-        Item item = ItemMapper.toItem(itemServiceImpl.findItemById(bookingDtoShort.getItemId(), bookerId));
+        User booker = userMapper.toUser(userServiceImpl.findUserById(bookerId));
+        Item item = itemMapper.toItem(itemServiceImpl.findItemById(bookingDtoShort.getItemId(), bookerId));
 
         if (itemServiceImpl.findOwnerId(item.getId()).equals(bookerId)) {
             log.warn("User with id={} cannot be a booker (User is the owner).", bookerId);
@@ -56,7 +59,7 @@ public class BookingServiceImpl implements BookingService {
                     .status(BookingStatus.WAITING)
                     .build();
             log.info("Created Booking with id={}.", booking.getId());
-            return BookingMapper.toBookingDto(bookingRepository.save(booking));
+            return bookingMapper.toBookingDto(bookingRepository.save(booking));
         } else {
             log.warn("Item with id={} is not available.", item.getId());
             throw new NotAvailableException("Item with id = %d is not available.");
@@ -71,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
 
         if (booking.getBooker().getId().equals(userId) || booking.getItem().getOwnerId().equals(userId)) {
             log.info("Found Booking with id={}.", bookingId);
-            return BookingMapper.toBookingDto(booking);
+            return bookingMapper.toBookingDto(booking);
         } else {
             log.warn("User with id={} nas no access to Booking with id={} (User isn't the owner).", userId, bookingId);
             throw new ForbiddenAccessException(String.format("User with id = %d is not the owner, " +
@@ -88,27 +91,27 @@ public class BookingServiceImpl implements BookingService {
         switch (state) {
             case "ALL":
                 log.info("Found all bookings with state 'ALL' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository.findAllByBookerIdOrderByStartDesc(userId));
+                return bookingMapper.toBookingDto(bookingRepository.findAllByBookerIdOrderByStartDesc(userId));
             case "CURRENT":
                 log.info("Found all bookings with state 'CURRENT' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllByBookerIdAndEndIsAfterAndStartIsBeforeOrderByStartDesc(userId, now, now));
             case "PAST":
                 log.info("Found all bookings with state 'PAST' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllByBookerIdAndEndIsBeforeOrderByStartDesc(userId, now));
             case "FUTURE":
                 log.info("Found all bookings with state 'FUTURE' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllByBookerIdAndStartIsAfterOrderByStartDesc(userId, now));
             case "WAITING":
                 log.info("Found all bookings with state 'WAITING' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllByBookerIdAndStartIsAfterAndStatusIsOrderByStartDesc(userId, now,
                                 BookingStatus.WAITING));
             case "REJECTED":
                 log.info("Found all bookings with state 'REJECTED' made by User with id={}.", userId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllByBookerIdAndStatusIsOrderByStartDesc(userId, BookingStatus.REJECTED));
 
         }
@@ -124,23 +127,23 @@ public class BookingServiceImpl implements BookingService {
         switch (state) {
             case "ALL":
                 log.info("Found all bookings with state 'ALL' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository.findAllBookingsOwner(ownerId));
+                return bookingMapper.toBookingDto(bookingRepository.findAllBookingsOwner(ownerId));
             case "CURRENT":
                 log.info("Found all bookings with state 'CURRENT' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository.findAllCurrentBookingsOwner(ownerId, now));
+                return bookingMapper.toBookingDto(bookingRepository.findAllCurrentBookingsOwner(ownerId, now));
             case "PAST":
                 log.info("Found all bookings with state 'PAST' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository.findAllPastBookingsOwner(ownerId, now));
+                return bookingMapper.toBookingDto(bookingRepository.findAllPastBookingsOwner(ownerId, now));
             case "FUTURE":
                 log.info("Found all bookings with state 'FUTURE' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository.findAllFutureBookingsOwner(ownerId, now));
+                return bookingMapper.toBookingDto(bookingRepository.findAllFutureBookingsOwner(ownerId, now));
             case "WAITING":
                 log.info("Found all bookings with state 'WAITING' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllWaitingBookingsOwner(ownerId, now, BookingStatus.WAITING));
             case "REJECTED":
                 log.info("Found all bookings with state 'REJECTED' of Owner with id={}.", ownerId);
-                return BookingMapper.toBookingDto(bookingRepository
+                return bookingMapper.toBookingDto(bookingRepository
                         .findAllRejectedBookingsOwner(ownerId, BookingStatus.REJECTED));
         }
         log.warn("Unknown state: {}.", state);

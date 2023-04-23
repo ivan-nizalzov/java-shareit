@@ -13,27 +13,25 @@ import ru.practicum.shareit.user.mapper.UserMapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.practicum.shareit.user.mapper.UserMapper.toUser;
-import static ru.practicum.shareit.user.mapper.UserMapper.toUserDto;
-
 @Slf4j
 @Service
 @AllArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     @Transactional
     @Override
     public UserDto create(UserDto userDto) {
         log.info("Created new User");
-        return toUserDto(userRepository.save(toUser(userDto)));
+        return userMapper.toUserDto(userRepository.save(userMapper.toUser(userDto)));
     }
 
     @Transactional
     @Override
     public UserDto findUserById(Long userId) {
         log.info("Found User with id={}.", userId);
-        return toUserDto(userRepository.findById(userId).orElseThrow(
+        return userMapper.toUserDto(userRepository.findById(userId).orElseThrow(
                 () -> new NotFoundException(String.format("User with id = %d not found.", userId))));
     }
 
@@ -42,14 +40,14 @@ public class UserServiceImpl implements UserService {
     public List<UserDto> findAllUsers() {
         log.info("Found all of Users.");
         return userRepository.findAll().stream()
-                .map(UserMapper::toUserDto)
+                .map(userMapper::toUserDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     @Override
     public UserDto update(UserDto userDto, Long userId) {
-        User user = toUser(findUserById(userId));
+        User user = userMapper.toUser(findUserById(userId));
         if (userDto.getName() != null) {
             user.setName(userDto.getName());
         }
@@ -58,7 +56,7 @@ public class UserServiceImpl implements UserService {
         }
         log.info("Updated User with id={}.", userId);
 
-        return toUserDto(userRepository.save(user));
+        return userMapper.toUserDto(userRepository.save(user));
     }
 
     @Transactional
