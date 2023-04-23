@@ -1,19 +1,21 @@
 package ru.practicum.shareit.item.repository;
 
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import ru.practicum.shareit.item.model.Item;
 
+import java.util.List;
+
+@Repository
 public interface ItemRepository extends JpaRepository<Item, Long> {
+    List<Item> findAllByOwnerId(Long userId);
 
-  List<Item> findAllByOwnerId(Long ownerId);
-
-  @Query(value = "SELECT i "
-      + "FROM items i "
-      + "WHERE UPPER(i.name) Like CONCAT('%',UPPER(:searchCriteria),'%') "
-      + "OR UPPER(i.description) Like CONCAT('%',UPPER(:searchCriteria),'%') "
-      + "AND is_available = true")
-  List<Item> findAllByNameOrDescription(@Param("searchCriteria") String searchCriteria);
+    @Modifying
+    @Query("select i from Item i " +
+            "where upper(i.name) like upper(concat('%', ?1, '%')) " +
+            "or upper(i.description) like upper(concat('%', ?1, '%')) " +
+            "and i.available = true")
+    List<Item> searchAvailableItems(String text);
 }

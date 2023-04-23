@@ -1,22 +1,19 @@
 package ru.practicum.shareit.user.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import lombok.*;
+
 import javax.validation.constraints.Email;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import javax.validation.constraints.NotBlank;
 
-@Getter
-@Setter
+@Data
+@Builder
 @AllArgsConstructor
-@ToString
-@JsonInclude(Include.NON_NULL)
+@NoArgsConstructor
 public class UserDto {
-
-  private Long id;
-  private String name;
-  @Email
-  private String email;
+    private Long id;
+    @NotBlank
+    private String name;
+    @NotBlank
+    @Email
+    private String email;
 }
