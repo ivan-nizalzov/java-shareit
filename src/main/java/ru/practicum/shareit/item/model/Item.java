@@ -1,35 +1,37 @@
 package ru.practicum.shareit.item.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import ru.practicum.shareit.request.model.Request;
-import ru.practicum.shareit.user.model.User;
+import lombok.Setter;
+import lombok.ToString;
 
-import javax.persistence.*;
-
-@Data
-@Builder
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
+@Builder
 @NoArgsConstructor
-@Entity
-@Table(name = "items")
+@Entity(name = "items")
 public class Item {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "item_id")
-    private Long id;
-    @Column(name = "item_name")
-    private String name;
-    private String description;
-    @Column(name = "is_available")
-    private Boolean isAvailable;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", referencedColumnName = "user_id")
-    private User owner;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_request_id", referencedColumnName = "request_id")
-    private Request request;
 
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+  private String name;
+  private String description;
+  private Boolean isAvailable;
+  private Long ownerId;
+  @Column(name = "request_id")
+  private String request;
+
+  public Item(long itemId) {
+    this.id = itemId;
+  }
 }
