@@ -49,7 +49,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto create(Long userId, ItemDto itemDto) {
         userServiceImpl.findUserById(userId);
         Item item = itemMapper.toItem(itemDto);
-        item.setOwnerId(userId);
+        item.setOwner(userMapper.toUser(userServiceImpl.findUserById(userId)));
         log.info("Created new Item with id={}.", item.getId());
 
         return itemMapper.toItemDto(itemRepository.save(item));
@@ -63,7 +63,7 @@ public class ItemServiceImpl implements ItemService {
                 () -> new NotFoundException(String.format("Item с id = %d не найден.", itemId)));
         result = itemMapper.toItemDto(item);
 
-        if (Objects.equals(item.getOwnerId(), userId)) {
+        if (Objects.equals(item.getOwner().getId(), userId)) {
             updateBookings(result);
         }
 
@@ -95,7 +95,7 @@ public class ItemServiceImpl implements ItemService {
                 () -> new NotFoundException(String.format("Item with id = %d not found.", itemId)));
         userServiceImpl.findUserById(userId);
 
-        if (!item.getOwnerId().equals(userId)) {
+        if (!item.getOwner().getId().equals(userId)) {
             throw new ForbiddenAccessException(String.format("User with id = %d is not the owner, " +
                     "update is not available.", userId));
         }
@@ -166,7 +166,7 @@ public class ItemServiceImpl implements ItemService {
     public Long findOwnerId(Long itemId) {
         return itemRepository.findById(itemId)
                 .orElseThrow(() -> new NotFoundException(String.format("Item with id = %d not found.", itemId)))
-                .getOwnerId();
+                .getOwner().getId();
     }
 
     @Transactional

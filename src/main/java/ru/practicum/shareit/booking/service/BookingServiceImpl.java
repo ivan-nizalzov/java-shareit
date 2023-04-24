@@ -72,7 +72,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId).orElseThrow(
                 () -> new NotFoundException(String.format("Booking with id = %d is not found.", bookingId)));
 
-        if (booking.getBooker().getId().equals(userId) || booking.getItem().getOwnerId().equals(userId)) {
+        if (booking.getBooker().getId().equals(userId) || booking.getItem().getOwner().getId().equals(userId)) {
             log.info("Found Booking with id={}.", bookingId);
             return bookingMapper.toBookingDto(booking);
         } else {

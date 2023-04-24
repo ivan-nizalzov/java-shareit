@@ -1,8 +1,9 @@
 package ru.practicum.shareit.item.model;
 
 import lombok.*;
-import ru.practicum.shareit.booking.dto.ShortItemBookingDto;
+import ru.practicum.shareit.booking.model.ShortItemBooking;
 import ru.practicum.shareit.item.comment.dto.CommentDto;
+import ru.practicum.shareit.user.model.User;
 
 import javax.persistence.*;
 import java.util.List;
@@ -23,12 +24,13 @@ public class Item {
     private String description;
     @Column(name = "is_available", nullable = false)
     private Boolean available;
-    @Column(name = "owner_id", nullable = false)
-    private Long ownerId;
+    @ManyToOne
+    @JoinColumn(name = "owner_id", referencedColumnName = "id")
+    private User owner;
     @Transient
-    private ShortItemBookingDto lastBooking;
+    private ShortItemBooking lastBooking;
     @Transient
-    private ShortItemBookingDto nextBooking;
+    private ShortItemBooking nextBooking;
     @Transient
     private List<CommentDto> comments;
 

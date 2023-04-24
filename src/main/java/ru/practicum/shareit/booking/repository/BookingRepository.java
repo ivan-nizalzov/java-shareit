@@ -36,41 +36,41 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "order by b.start desc")
     List<Booking> findAllBookingsOwner(Long ownerId);
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "and :time between b.start and b.end " +
             "order by b.start desc")
     List<Booking> findAllCurrentBookingsOwner(Long ownerId, LocalDateTime time);
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "and b.end < :time " +
             "order by b.start desc")
     List<Booking> findAllPastBookingsOwner(Long ownerId, LocalDateTime time);
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "and b.start > :time " +
             "order by b.start desc")
     List<Booking> findAllFutureBookingsOwner(Long ownerId, LocalDateTime time);
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "and b.start > :time and b.status = :status " +
             "order by b.start desc")
     List<Booking> findAllWaitingBookingsOwner(Long ownerId, LocalDateTime time, BookingStatus status);
 
     @Query("select b from Booking b " +
             "inner join Item i on b.item.id = i.id " +
-            "where i.ownerId = :ownerId " +
+            "where i.owner.id = :ownerId " +
             "and b.status = :status " +
             "order by b.start desc")
     List<Booking> findAllRejectedBookingsOwner(Long ownerId, BookingStatus status);
