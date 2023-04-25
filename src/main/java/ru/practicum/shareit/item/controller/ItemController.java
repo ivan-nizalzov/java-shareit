@@ -1,47 +1,77 @@
 package ru.practicum.shareit.item.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.item.comment.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.service.ItemService;
 
+import javax.validation.Valid;
+import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 
 @RestController
-@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @RequestMapping("/items")
+@AllArgsConstructor
+@Slf4j
 public class ItemController {
     private final ItemService itemService;
+    private final String USER_HEADER = "X-Sharer-User-Id";
 
     @PostMapping
-    public ResponseEntity<ItemDto> createItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-                              @RequestBody ItemDto itemDto) {
-        return ResponseEntity.ok().body(itemService.createItem(itemDto, userId));
-    }
+    public ResponseEntity<ItemDto> create(@RequestHeader(USER_HEADER) Long userId,
+                                          @Valid @RequestBody ItemDto itemDto) {
+        log.debug("POST-запрос на создание новой вещи.");
 
-    @PatchMapping("/{itemId}")
-    public ResponseEntity<ItemDto> updateItem(@RequestHeader("X-Sharer-User-Id") Long userId,
-                              @PathVariable("itemId") Long itemId,
-                              @RequestBody ItemDto itemDto) {
-        return ResponseEntity.ok().body(itemService.updateItem(itemId, userId, itemDto));
+        return ResponseEntity.ok(itemService.create(userId, itemDto));
     }
 
     @GetMapping("/{itemId}")
-    public ResponseEntity<ItemDto> getItemById(@PathVariable("itemId") Long itemId) {
-        return ResponseEntity.ok().body(itemService.getItemById(itemId));
+    public ResponseEntity<ItemDto> findById(@RequestHeader(USER_HEADER) Long userId, @PathVariable Long itemId) {
+        log.debug("GET-запрос на получение вещи по идентификатору.");
+
+        return ResponseEntity.ok(itemService.findItemById(itemId, userId));
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemDto>> getAllItemsOfUser(@RequestHeader("X-Sharer-User-Id") long userId) {
-        return ResponseEntity.ok().body(itemService.getAllItemsOfUser(userId));
+    public ResponseEntity<List<ItemDto>> findAll(@RequestHeader(USER_HEADER) Long userId) {
+        log.debug("GET-запрос на получение всех вещей пользователя по идентификатору.");
+
+        return ResponseEntity.ok(itemService.findAllItemsOfUser(userId));
+    }
+
+    @PatchMapping("/{itemId}")
+    public ResponseEntity<ItemDto> update(@RequestHeader(USER_HEADER) Long userId, @PathVariable long itemId,
+                          @RequestBody ItemDto itemDto) {
+        log.debug("PATCH-запрос на обновление вещи.");
+
+        return ResponseEntity.ok(itemService.update(itemDto, itemId, userId));
+    }
+
+    @DeleteMapping("/{itemId}")
+    public ResponseEntity<Void> deleteItem(@PathVariable Long itemId) {
+        log.debug("DELETE-запрос на удаление вещи.");
+        itemService.deleteById(itemId);
+
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ItemDto>> searchItem(@RequestParam("text") String searchQuery) {
-        return ResponseEntity.ok().body(itemService.searchItem(searchQuery.toLowerCase(Locale.ROOT)));
+    public ResponseEntity<Collection<ItemDto>> search(@RequestParam String text) {
+        log.debug("GET-запрос на поиск вещей.", text);
+
+        return ResponseEntity.ok(itemService.search(text));
     }
 
+    @PostMapping("/{itemId}/comment")
+    public ResponseEntity<CommentDto> createComment(@RequestHeader(USER_HEADER) Long userId,
+                                    @PathVariable Long itemId,
+                                    @Valid @RequestBody CommentDto commentDto) {
+        log.debug("POST-запрос на добавление отзыва.");
+
+        return ResponseEntity.ok(itemService.addComment(itemId, userId, commentDto));
+    }
 }

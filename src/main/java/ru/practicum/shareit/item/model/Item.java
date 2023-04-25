@@ -1,24 +1,37 @@
 package ru.practicum.shareit.item.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Data;
-import ru.practicum.shareit.request.model.ItemRequest;
+import lombok.*;
+import ru.practicum.shareit.booking.model.ShortItemBooking;
+import ru.practicum.shareit.item.comment.dto.CommentDto;
 import ru.practicum.shareit.user.model.User;
 
-/**
- * TODO Sprint add-controllers.
- */
+import javax.persistence.*;
+import java.util.List;
 
+@Entity
+@Table(name = "items")
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Item {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name = "name", nullable = false)
     private String name;
+    @Column(name = "description", nullable = false)
     private String description;
-    private Boolean isAvailable;
-    //private Long ownerId;
+    @Column(name = "is_available", nullable = false)
+    private Boolean available;
+    @ManyToOne
+    @JoinColumn(name = "owner_id", referencedColumnName = "id")
     private User owner;
-    private ItemRequest request;
+    @Transient
+    private ShortItemBooking lastBooking;
+    @Transient
+    private ShortItemBooking nextBooking;
+    @Transient
+    private List<CommentDto> comments;
 
 }

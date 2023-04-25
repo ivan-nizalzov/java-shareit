@@ -25,55 +25,50 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct-processor</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
     </dependencies>
-
 
     <build>
         <resources>
@@ -82,7 +77,6 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -97,7 +91,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -127,13 +120,13 @@
                             <phase>compile</phase>
                         </execution>
                     </executions>
-                    <!--<dependencies>
-                        <dependency>
+                    <dependencies>
+                        <!--<dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
                             <version>10.3</version>
-                        </dependency>
-                    </dependencies>-->
+                        </dependency>-->
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>com.github.spotbugs</groupId>
@@ -188,17 +181,17 @@
                                             <limit>
                                                 <counter>BRANCH</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.6</minimum>
+                                                <minimum>0.9</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>COMPLEXITY</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.6</minimum>
+                                                <minimum>0.9</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>METHOD</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.7</minimum>
+                                                <minimum>0.9</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>CLASS</counter>
@@ -211,8 +204,8 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <id>jacoco-report</id>
-                            <phase>test</phase>
+                            <id>jacoco-site</id>
+                            <phase>install</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
@@ -221,15 +214,13 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
     </build>
-
     <profiles>
         <profile>
             <id>check</id>
             <build>
                 <plugins>
-                    <!--<plugin>
+                   <!-- <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
                     </plugin>
@@ -240,12 +231,12 @@
                 </plugins>
             </build>
             <reporting>
-                <!--<plugins>
-                    <plugin>
+                <plugins>
+                    <!--<plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>-->
+                    </plugin>-->
+                </plugins>
             </reporting>
         </profile>
         <profile>
