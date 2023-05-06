@@ -7,7 +7,7 @@ import java.util.List;
 public interface BookingService {
     ResponseBookingDto create(RequestBookingDto bookingDtoShort, Long bookerId);
     ResponseBookingDto findBookingById(Long bookingId, Long userId);
-    List<ResponseBookingDto> findAllBookingsByUser(String state, Long userId);
-    List<ResponseBookingDto> findAllBookingsByOwner(String state, Long ownerId);
+    List<ResponseBookingDto> findAllBookingsByUser(String state, Long userId, Integer from, Integer size);
+    List<ResponseBookingDto> findAllBookingsByOwner(String state, Long ownerId, Integer from, Integer size);
     ResponseBookingDto approve(Long bookingId, Long userId, Boolean isApproved);
 }

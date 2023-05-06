@@ -8,11 +8,11 @@ public interface ItemService {
 
     ItemDto create(Long userId, ItemDto itemDto);
     ItemDto findItemById(Long itemId, Long userId);
-    List<ItemDto> findAllItemsOfUser(Long userId);
+    List<ItemDto> findAllItemsOfUser(Long userId, Integer from, Integer size);
     ItemDto update(ItemDto itemDto, Long itemId, Long userId);
     ItemDto updateBookings(ItemDto itemDto);
     void deleteById(Long itemId);
-    List<ItemDto> search(String text);
+    List<ItemDto> search(String text, Integer from, Integer size);
     Long findOwnerId(Long itemId);
     CommentDto addComment(Long itemId, Long userId, CommentDto commentDto);
 }

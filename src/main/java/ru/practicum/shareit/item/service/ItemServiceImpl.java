@@ -2,12 +2,15 @@ package ru.practicum.shareit.item.service;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.mapper.BookingMapper;
 import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.repository.BookingRepository;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.exception.NotAvailableException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ForbiddenAccessException;
@@ -19,6 +22,8 @@ import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.mapper.ItemRequestMapper;
+import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserServiceImpl;
@@ -43,6 +48,8 @@ public class ItemServiceImpl implements ItemService {
     private final BookingMapper bookingMapper;
     private final UserMapper userMapper;
     private final CommentMapper commentMapper;
+    private final ItemRequestMapper itemRequestMapper;
+    private final ItemRequestService itemRequestService;
 
     @Transactional
     @Override
@@ -50,6 +57,8 @@ public class ItemServiceImpl implements ItemService {
         userServiceImpl.findUserById(userId);
         Item item = itemMapper.toItem(itemDto);
         item.setOwner(userMapper.toUser(userServiceImpl.findUserById(userId)));
+        item.setItemRequest(itemDto.getRequestId() != null ?
+                itemRequestMapper.toItemRequest(itemRequestService.findById(userId, itemDto.getRequestId())) : null);
         log.info("Created new Item with id={}.", item.getId());
 
         return itemMapper.toItemDto(itemRepository.save(item));
@@ -60,7 +69,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto findItemById(Long itemId, Long userId) {
         ItemDto result;
         Item item = itemRepository.findById(itemId).orElseThrow(
-                () -> new NotFoundException(String.format("Item с id = %d не найден.", itemId)));
+                () -> new NotFoundException(String.format("Item with id = %d not found.", itemId)));
         result = itemMapper.toItemDto(item);
 
         if (Objects.equals(item.getOwner().getId(), userId)) {
@@ -76,8 +85,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Transactional
     @Override
-    public List<ItemDto> findAllItemsOfUser(Long userId) {
-        List<ItemDto> item = itemRepository.findAllByOwnerId(userId).stream()
+    public List<ItemDto> findAllItemsOfUser(Long userId, Integer from, Integer size) {
+        Pageable page = PageRequest.of(from / size, size);
+        List<ItemDto> item = itemRepository.findAllByOwnerId(userId, page).stream()
                 .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());
         log.info("Found all items of User with id={}.", userId);
@@ -150,7 +160,9 @@ public class ItemServiceImpl implements ItemService {
 
     @Transactional
     @Override
-    public List<ItemDto> search(String text) {
+    public List<ItemDto> search(String text, Integer from, Integer size) {
+        Pageable page = PageRequest.of(from / size, size);
+
         if (text == null || text.isBlank()) {
             return new ArrayList<>();
         }
@@ -191,6 +203,12 @@ public class ItemServiceImpl implements ItemService {
         } else {
             throw new NotAvailableException(String.format("Booking for User with id = %d and Item with id = %d not found.",
                     userId, itemId));
+        }
+    }
+
+    private void checkPageRequest(Integer from, Integer size) {
+        if (from < 0) {
+            throw new BadRequestException("Bad request: PageRequest 'from' cannot be null or negative");
         }
     }
 

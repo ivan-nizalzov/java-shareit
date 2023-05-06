@@ -20,37 +20,32 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserDto> create(@Valid @RequestBody UserDto userDto) {
-        log.debug("POST-запрос на создание нового пользователя.");
-
+        log.debug("POST /users : create new user");
         return ResponseEntity.ok(userService.create(userDto));
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDto> findById(@PathVariable long userId) {
-        log.debug("GET-запрос на вывод пользователя по идентификатору.");
-
+    public ResponseEntity<UserDto> findById(@PathVariable Long userId) {
+        log.debug("GET /users/{userId} : get user by id ");
         return ResponseEntity.ok(userService.findUserById(userId));
     }
 
     @GetMapping
     public ResponseEntity<List<UserDto>> findAll() {
-        log.debug("GET-запрос на вывод всех пользователей.");
-
+        log.debug("GET /users : get all users");
         return ResponseEntity.ok(userService.findAllUsers());
     }
 
     @PatchMapping("/{userId}")
-    public ResponseEntity<UserDto> update(@RequestBody UserDto userDto, @PathVariable long userId) {
-        log.debug("PATCH-запрос на обновление пользователя.");
-
+    public ResponseEntity<UserDto> update(@RequestBody UserDto userDto, @PathVariable Long userId) {
+        log.debug("PATCH /users/{userId} : update user ");
         return ResponseEntity.ok(userService.update(userDto, userId));
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> delete(@PathVariable long userId) {
-        log.debug("DELETE-запрос на удаление пользователя.");
+    public ResponseEntity<Void> delete(@PathVariable Long userId) {
+        log.debug("DELETE /users/{userId} : delete user");
         userService.delete(userId);
-
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }
