@@ -16,4 +16,9 @@ public class UserDto {
     @NotBlank
     @Email
     private String email;
+
+    public UserDto(Long id) {
+        this.id = id;
+    }
+
 }

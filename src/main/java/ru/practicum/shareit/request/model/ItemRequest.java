@@ -11,6 +11,7 @@ import ru.practicum.shareit.user.model.User;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "requests")
@@ -32,5 +33,6 @@ public class ItemRequest {
     private LocalDateTime created;
     @Transient
     private List<Item> items;
+
 }
 

@@ -3,6 +3,7 @@ package ru.practicum.shareit.user.model;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
@@ -18,5 +19,6 @@ public class User {
     private String name;
     @Column(name = "email", nullable = false, unique = true)
     private String email;
+
 }
 

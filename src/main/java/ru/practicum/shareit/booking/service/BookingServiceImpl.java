@@ -47,6 +47,8 @@ public class BookingServiceImpl implements BookingService {
         User booker = userMapper.toUser(userServiceImpl.findUserById(bookerId));
         Item item = itemMapper.toItem(itemServiceImpl.findItemById(bookingDtoShort.getItemId(), bookerId));
 
+        String test = "test";
+
         if (itemServiceImpl.findOwnerId(item.getId()).equals(bookerId)) {
             log.warn("User with id={} cannot be a booker (User is the owner).", bookerId);
             throw new ForbiddenAccessException("The owner cannot be a booker.");

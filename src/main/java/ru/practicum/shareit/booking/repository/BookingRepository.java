@@ -19,7 +19,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "WHERE b.id = :bookingId")
     void update(BookingStatus status, Long bookingId);
 
-    List<Booking> findAllByBookerIdOrderByStartDesc(long id, Pageable page);
+    List<Booking> findAllByBookerIdOrderByStartDesc(Long id, Pageable page);
 
     List<Booking> findAllByBookerIdAndStatusIsOrderByStartDesc(Long id, BookingStatus status, Pageable page);
 
