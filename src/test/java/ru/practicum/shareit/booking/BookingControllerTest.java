@@ -41,8 +41,8 @@ public class BookingControllerTest {
             .available(true)
             .build();
     private final RequestBookingDto requestBookingDto = RequestBookingDto.builder()
-            .start(LocalDateTime.of(2023, 05, 10, 13, 00, 00))
-            .end(LocalDateTime.of(2023, 05, 20, 13, 00, 00))
+            .start(LocalDateTime.now().plusHours(1))
+            .end(LocalDateTime.now().plusHours(24))
             .itemId(1L).build();
     private final ResponseBookingDto responseBookingDto = ResponseBookingDto.builder()
             .start(LocalDateTime.of(2023, 05, 10, 13, 00, 00))
