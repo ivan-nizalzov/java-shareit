@@ -79,7 +79,7 @@ public class UserServiceImplTest {
         assertEquals(userService.findAllUsers(), new ArrayList<>());
     }*/
 
-    //TODO
+    //TODO test
     /*@Test
     void updateUser_whenUserIsExist_thenReturnedExpectedUpdatedUser() {
         Mockito.when(userRepository.findById(1L))
