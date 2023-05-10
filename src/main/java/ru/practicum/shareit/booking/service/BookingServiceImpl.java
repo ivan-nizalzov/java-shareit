@@ -64,7 +64,7 @@ public class BookingServiceImpl implements BookingService {
             return bookingMapper.toBookingDto(bookingRepository.save(booking));
         } else {
             log.warn("Item with id={} is not available.", item.getId());
-            throw new NotAvailableException("Item with id = %d is not available.");
+            throw new NotAvailableException("Item with id = " + item.getId() + " is not available.");
         }
     }
 
@@ -159,10 +159,10 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @Override
     public ResponseBookingDto approve(Long bookingId, Long userId, Boolean isApproved) {
-        ResponseBookingDto booking = findBookingById(bookingId, userId);
-        Long ownerId = itemServiceImpl.findOwnerId(booking.getItem().getId());
+        ResponseBookingDto responseBookingDto = findBookingById(bookingId, userId);
+        Long ownerId = itemServiceImpl.findOwnerId(responseBookingDto.getItem().getId());
 
-        if (ownerId.equals(userId) && booking.getStatus().equals(BookingStatus.APPROVED)) {
+        if (ownerId.equals(userId) && responseBookingDto.getStatus().equals(BookingStatus.APPROVED)) {
             log.warn("The booking decision has already been made.");
             throw new AlreadyExistsException("The booking decision has already been made.");
         }
@@ -173,15 +173,15 @@ public class BookingServiceImpl implements BookingService {
         }
 
         if (isApproved) {
-            booking.setStatus(BookingStatus.APPROVED);
+            responseBookingDto.setStatus(BookingStatus.APPROVED);
             bookingRepository.update(BookingStatus.APPROVED, bookingId);
         } else {
-            booking.setStatus(BookingStatus.REJECTED);
+            responseBookingDto.setStatus(BookingStatus.REJECTED);
             bookingRepository.update(BookingStatus.REJECTED, bookingId);
         }
         log.info("Booking with id={} is approved by User with id={}.", bookingId, userId);
 
-        return booking;
+        return responseBookingDto;
     }
 
     private void checkPageRequest(Integer from, Integer size) {

@@ -67,32 +67,32 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     @Override
     public ItemDto findItemById(Long itemId, Long userId) {
-        ItemDto result;
+        ItemDto resultItemDto;
         Item item = itemRepository.findById(itemId).orElseThrow(
                 () -> new NotFoundException(String.format("Item with id = %d not found.", itemId)));
-        result = itemMapper.toItemDto(item);
+        resultItemDto = itemMapper.toItemDto(item);
 
         if (Objects.equals(item.getOwner().getId(), userId)) {
-            updateBookings(result);
+            updateBookings(resultItemDto);
         }
 
-        List<Comment> comments = commentRepository.findAllByItemId(result.getId());
-        result.setComments(commentMapper.toDtoList(comments));
+        List<Comment> comments = commentRepository.findAllByItemId(resultItemDto.getId());
+        resultItemDto.setComments(commentMapper.toDtoList(comments));
         log.info("Found Item with id={}.", itemId);
 
-        return result;
+        return resultItemDto;
     }
 
     @Transactional
     @Override
     public List<ItemDto> findAllItemsOfUser(Long userId, Integer from, Integer size) {
         Pageable page = PageRequest.of(from / size, size);
-        List<ItemDto> item = itemRepository.findAllByOwnerId(userId, page).stream()
+        List<ItemDto> itemDtoList = itemRepository.findAllByOwnerId(userId, page).stream()
                 .map(itemMapper::toItemDto)
                 .collect(Collectors.toList());
         log.info("Found all items of User with id={}.", userId);
 
-        return item.stream()
+        return itemDtoList.stream()
                 .map(this::updateBookings)
                 .peek((i) -> commentMapper.toDtoList(commentRepository.findAllByItemId(i.getId())))
                 .collect(Collectors.toList());
@@ -139,6 +139,7 @@ public class ItemServiceImpl implements ItemService {
                 .filter(obj -> obj.getStart().isAfter(now))
                 .min(Comparator.comparing(Booking::getStart)).orElse(null);
 
+        String test = "test"; //TODO: delete
         if (lastBooking != null) {
             itemDto.setLastBooking(bookingMapper.toItemBookingDto(lastBooking));
         }
