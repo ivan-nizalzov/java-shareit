@@ -123,7 +123,7 @@ public class ItemRequestServiceImplTest {
 
         final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
                 () -> requestService.create(badId, itemRequestDto));
-        Assertions.assertEquals("При запросе пользователя произошла ошибка", exception.getMessage());
+        Assertions.assertEquals("User with id=" + badId + " not found.", exception.getMessage());
     }
 
     @Test

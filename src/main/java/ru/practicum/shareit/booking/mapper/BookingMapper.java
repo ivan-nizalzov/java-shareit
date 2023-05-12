@@ -12,7 +12,16 @@ import ru.practicum.shareit.user.model.User;
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
 
-    BookingDto toBookingDto(Booking booking);
+    default BookingDto toBookingDto(Booking booking) {
+        return BookingDto.builder()
+                .id(booking.getId())
+                .start(booking.getStart())
+                .end(booking.getEnd())
+                .item(booking.getItem())
+                .booker(booking.getBooker())
+                .status(booking.getStatus())
+                .build();
+    }
 
     default Booking toBooking(BookingShortDto bookingDto, User user, Item item, BookingStatus status) {
         return Booking.builder()
@@ -24,6 +33,11 @@ public interface BookingMapper {
                 .build();
     }
 
-    BookingInfoDto toBookingInfoDto(Booking booking);
+    default BookingInfoDto toBookingInfoDto(Booking booking) {
+        return BookingInfoDto.builder()
+                .id(booking.getId())
+                .bookerId(booking.getBooker().getId())
+                .build();
+    }
 
 }

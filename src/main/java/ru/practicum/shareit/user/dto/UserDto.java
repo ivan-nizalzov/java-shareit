@@ -15,9 +15,9 @@ public class UserDto {
     @Email(message = "Электронная почта не может быть пустой")
     private String email;
 
-    public UserDto(Long id) {
+    /*public UserDto(Long id) {
         this.id = id;
-    }
+    }*/
 
 }
 

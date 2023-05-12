@@ -17,6 +17,11 @@ public interface CommentMapper {
                 .build();
     }
 
-    Comment toComment(CommentDto commentDto);
+    default Comment toComment(CommentDto commentDto) {
+        return Comment.builder()
+                .id(commentDto.getId())
+                .text(commentDto.getText())
+                .build();
+    }
 
 }
