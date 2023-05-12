@@ -10,12 +10,7 @@ import java.time.LocalDateTime;
 @Mapper(componentModel = "spring")
 public interface ItemRequestMapper {
 
-    //@Mapping(target = "items", ignore = true)
     ItemRequestDto toItemRequestDto(ItemRequest itemRequest);
-
-   /* @Mapping(target = "requestorId", source = "userId")
-    @Mapping(target = "created", source = "dateTime")
-    ItemRequest toItemRequest(ItemRequestDto itemRequestDto, Long userId, LocalDateTime dateTime);*/
 
     default ItemRequest toItemRequest(ItemRequestDto itemRequestDto, Long userId, LocalDateTime dateTime) {
         return ItemRequest.builder()
@@ -25,23 +20,5 @@ public interface ItemRequestMapper {
                 .requestorId(userId)
                 .build();
     }
-
-    /*public static ItemRequestDto toItemRequestDto(ItemRequest itemRequest) {
-        return ItemRequestDto.builder()
-                .id(itemRequest.getId())
-                .description(itemRequest.getDescription())
-                .created(itemRequest.getCreated())
-                .requestorId(itemRequest.getRequestorId())
-                .build();
-    }
-
-    public static ItemRequest toItemRequest(ItemRequestDto itemRequestDto, Long userId, LocalDateTime dateTime) {
-        return ItemRequest.builder()
-                .id(itemRequestDto.getId())
-                .description(itemRequestDto.getDescription())
-                .created(dateTime)
-                .requestorId(userId)
-                .build();
-    }*/
 
 }
