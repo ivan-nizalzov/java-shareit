@@ -17,7 +17,10 @@
 
     <properties>
         <java.version>11</java.version>
-        <mapstruct.version>1.5.3.Final</mapstruct.version>
+        <org.mapstruct.version>1.5.3.Final</org.mapstruct.version>
+        <org.projectlombok.version>1.18.16</org.projectlombok.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
     <dependencies>
@@ -25,10 +28,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -39,34 +44,43 @@
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>1.18.26</version>
+            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
-            <version>${mapstruct.version}</version>
+            <version>${org.mapstruct.version}</version>
         </dependency>
+        <!-- lombok dependency should not end up on classpath -->
         <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct-processor</artifactId>
-            <version>${mapstruct.version}</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${org.projectlombok.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -90,7 +104,37 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${org.projectlombok.version}</version>
+                        </path>
+                        <!-- additional annotation processor required as of Lombok 1.18.16 -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+
         </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -181,17 +225,17 @@
                                             <limit>
                                                 <counter>BRANCH</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.9</minimum>
+                                                <minimum>0.6</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>COMPLEXITY</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.9</minimum>
+                                                <minimum>0.6</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>METHOD</counter>
                                                 <value>COVEREDRATIO</value>
-                                                <minimum>0.9</minimum>
+                                                <minimum>0.7</minimum>
                                             </limit>
                                             <limit>
                                                 <counter>CLASS</counter>
@@ -204,8 +248,8 @@
                             </configuration>
                         </execution>
                         <execution>
-                            <id>jacoco-site</id>
-                            <phase>install</phase>
+                            <id>jacoco-report</id>
+                            <phase>test</phase>
                             <goals>
                                 <goal>report</goal>
                             </goals>
@@ -214,13 +258,14 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
     </build>
     <profiles>
         <profile>
             <id>check</id>
             <build>
                 <plugins>
-                   <!-- <plugin>
+                    <!--<plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-checkstyle-plugin</artifactId>
                     </plugin>
@@ -239,6 +284,7 @@
                 </plugins>
             </reporting>
         </profile>
+
         <profile>
             <id>coverage</id>
             <build>

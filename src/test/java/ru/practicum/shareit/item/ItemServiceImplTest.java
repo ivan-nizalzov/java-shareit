@@ -1,325 +1,203 @@
 package ru.practicum.shareit.item;
 
+import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import ru.practicum.shareit.booking.dto.ShortItemBookingDto;
-import ru.practicum.shareit.booking.mapper.BookingMapperImpl;
-import ru.practicum.shareit.booking.model.Booking;
-import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.exception.ForbiddenAccessException;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.BadRequestException;
 import ru.practicum.shareit.item.comment.dto.CommentDto;
-import ru.practicum.shareit.item.comment.mapper.CommentMapperImpl;
-import ru.practicum.shareit.item.comment.model.Comment;
-import ru.practicum.shareit.item.comment.repository.CommentRepository;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.ItemMapperImpl;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
-import ru.practicum.shareit.request.dto.ItemRequestDto;
-import ru.practicum.shareit.request.mapper.ItemRequestMapperImpl;
-import ru.practicum.shareit.request.model.ItemRequest;
-import ru.practicum.shareit.request.service.ItemRequestServiceImpl;
+import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapperImpl;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserServiceImpl;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.notNullValue;
 
-@ExtendWith(MockitoExtension.class)
+@Transactional
+@SpringBootTest(
+        properties = "db.name=test",
+        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class ItemServiceImplTest {
-    @InjectMocks
-    private ItemServiceImpl itemService;
-    @Mock
-    private ItemRepository itemRepository;
-    @Mock
-    private BookingRepository bookingRepository;
-    @Mock
-    private UserServiceImpl userService;
-    @Mock
-    private CommentRepository commentRepository;
-    @Mock
-    private ItemRequestServiceImpl requestService;
-    @Mock
-    private ItemMapperImpl itemMapper;
-    @Mock
-    private UserMapperImpl userMapper;
-    @Mock
-    private ItemRequestMapperImpl itemRequestMapper;
-    @Mock
-    private BookingMapperImpl bookingMapper;
-    @Mock
-    private CommentMapperImpl commentMapper;
+    private final ItemService itemService;
+    private final UserService userService;
+    private final BookingService bookingService;
+    private ItemDto itemDto;
+    private UserDto secondUserDto;
+    private ItemDto updateItemDto;
+    private UserDto testUser;
+    private UserDto secondUserFromDB;
 
-
-    private final User user = new User(1L, "User", "user@email.com");
-    private final UserDto userDto = new UserDto(1L, "User", "user@email.com");
-
-    private final ItemRequest itemRequest = ItemRequest.builder()
-            .id(1L)
-            .description("description")
-            .requester(user)
-            .items(new ArrayList<>())
-            .build();
-
-    private final ItemRequestDto itemRequestDto = ItemRequestDto.builder()
-            .id(1L)
-            .description("description")
-            .requester(userDto)
-            .items(new ArrayList<>())
-            .build();
-
-    private final Item item = Item.builder()
-            .id(1L)
-            .name("ItemName")
-            .description("description")
-            .available(true)
-            .itemRequest(itemRequest)
-            .owner(user)
-            .build();
-
-    private final ItemDto itemDto = ItemDto.builder()
-            .id(1L)
-            .name("ItemName")
-            .description("description")
-            .available(true)
-            .requestId(1L)
-            .build();
-
-    private final List<ItemDto> itemDtoList = List.of(itemDto);
-
-    private final Booking booking = Booking.builder()
-            .id(1L)
-            .item(item)
-            .booker(user)
-            .start(LocalDateTime.now().minusHours(2L))
-            .end(LocalDateTime.now().minusHours(1L))
-            .status(BookingStatus.WAITING)
-            .build();
-
-    private final ShortItemBookingDto shortItemBookingDto = ShortItemBookingDto.builder()
-            .id(1L)
-            .bookerId(user.getId())
-            .start(LocalDateTime.now())
-            .end(LocalDateTime.now().plusHours(24L))
-            .build();
-
-    private final List<Booking> bookingList = List.of(Booking.builder()
-                    .id(1L)
-                    .item(item)
-                    .booker(user)
-                    .start(LocalDateTime.now().minusHours(2L))
-                    .end(LocalDateTime.now().minusHours(1L))
-                    .status(BookingStatus.WAITING)
-                    .build(),
-            Booking.builder()
-                    .id(2L)
-                    .item(item)
-                    .booker(user)
-                    .start(LocalDateTime.now().plusHours(1L))
-                    .end(LocalDateTime.now().plusHours(2L))
-                    .status(BookingStatus.WAITING)
-                    .build());
-
-    private final Comment comment = Comment.builder()
-            .id(1L)
-            .text("Text")
-            .item(item)
-            .author(user)
-            .build();
-
-    private final List<Comment> commentList = List.of(comment);
-
-    private final CommentDto commentDto = CommentDto.builder()
-            .id(1L)
-            .text("Text")
-            .item(itemDto)
-            .authorName("User")
-            .build();
-
-    private final List<CommentDto> commentDtoList = List.of(commentDto);
-
-    @Test
-    void createItem_thenAllIsValid_whenReturnedExpectedItem() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(requestService.findById(anyLong(), anyLong()))
-                .thenReturn(itemRequestDto);
-        Mockito.when(itemRepository.save(any()))
-                .thenReturn(item);
-        Mockito.when(itemMapper.toItem(itemDto))
-                .thenReturn(item);
-        Mockito.when(userMapper.toUser(userDto))
-                .thenReturn(user);
-
-        Mockito.lenient().when(itemService.create(1L, itemDto))
-                .thenReturn(itemDto);
-
-        Mockito.verify(itemRepository, Mockito.times(1)).save(item);
-    }
-
-    @Test
-    void createItem_thenUserIsNotExist_whenReturnedNotFoundException() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenThrow(new NotFoundException(String.format(
-                        String.format("User with id = %d not found.", 100L))));
-
-        Exception e = assertThrows(NotFoundException.class,
-                () -> itemService.create(100L, itemDto));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 100L));
-    }
-
-    @Test
-    void findById_whenParamsIsValid_thenReturnedExpectedItem() {
-        Mockito.when(itemRepository.findById(anyLong()))
-                .thenReturn(Optional.of(item));
-        Mockito.when(itemMapper.toItemDto(item))
-                .thenReturn(itemDto);
-        Mockito.when(bookingMapper.toItemBookingDto(bookingList.get(0)))
-                .thenReturn(shortItemBookingDto);
-        Mockito.when(commentMapper.toDtoList(commentList))
-                .thenReturn(commentDtoList);
-        Mockito.when(commentRepository.findAllByItemId(anyLong()))
-                .thenReturn(List.of(comment));
-        Mockito.when(bookingRepository.findAllBookingsItem(anyLong()))
-                .thenReturn(bookingList);
-
-        ItemDto requestedItemDto = itemService.findItemById(1L, 1L);
-
-        assertEquals(requestedItemDto.getName(), item.getName());
-        assertEquals(requestedItemDto.getDescription(), item.getDescription());
-        assertEquals(requestedItemDto.getAvailable(), item.getAvailable());
-        assertEquals(requestedItemDto.getLastBooking().getId(), 1L);
-        assertEquals(requestedItemDto.getLastBooking().getBookerId(), 1L);
-    }
-
-    @Test
-    void findById_whenItemNotFound_thenReturnedNotFoundExeption() {
-        Mockito.when(itemRepository.findById(anyLong()))
-                .thenThrow(new NotFoundException(String.format("Item with id = %d not found.", 100L)));
-
-        Exception e = assertThrows(NotFoundException.class, () -> itemService
-                .findItemById(100L, 1L));
-
-        assertEquals(e.getMessage(), String.format("Item with id = %d not found.", 100L));
-    }
-
-    @Test
-    void findAllUserItems_whenAllParamsIsValid_thenReturnedListItems() {
-        Mockito.when(itemRepository.findAllByOwnerId(anyLong(), any()))
-                .thenReturn(List.of(item));
-        Mockito.when(itemMapper.toItemDto(item))
-                        .thenReturn(itemDto);
-        Mockito.when(commentRepository.findAllByItemId(item.getId()))
-                .thenReturn(commentList);
-        Mockito.when(commentMapper.toDtoList(commentList))
-                        .thenReturn(commentDtoList);
-        Mockito.when(itemService.findAllItemsOfUser(1L, 1, 1))
-                .thenReturn(itemDtoList);
-
-        List<ItemDto> userItemsList = itemService.findAllItemsOfUser(1L, 1, 1);
-
-        assertEquals(userItemsList.get(0).getId(), itemDto.getId());
-        assertEquals(userItemsList.get(0).getName(), itemDto.getName());
-        assertEquals(userItemsList.get(0).getDescription(), itemDto.getDescription());
-        assertEquals(userItemsList.get(0).getAvailable(), itemDto.getAvailable());
-    }
-
-    @Test
-    void updateItem_whenAllParamsIsValid_thenReturnedUpdatedItem() {
-        ItemDto itemDtoUpdate = ItemDto.builder()
-                .id(1L)
-                .name("ItemUpdate")
-                .description("DescriptionUpdate")
+    @BeforeEach
+    public void setUp() {
+        itemDto = ItemDto.builder()
+                .name("Дрель")
+                .description("Простая дрель")
                 .available(true)
-                .requestId(1L)
                 .build();
 
-        Mockito.when(itemRepository.findById(anyLong()))
-                .thenReturn(Optional.of(item));
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(itemRepository.save(any()))
-                .thenAnswer(i -> i.getArgument(0));
-        Mockito.when(itemService.update(itemDtoUpdate, 1L, 1L))
-                        .thenReturn(itemDtoUpdate);
+        updateItemDto = ItemDto.builder()
+                .name("Дрель+")
+                .description("Аккумуляторная дрель")
+                .available(true)
+                .build();
 
-        assertEquals(itemService.update(itemDtoUpdate, 1L, 1L), itemDtoUpdate);
+        UserDto userDto = UserDto.builder()
+                .email("test@test.com")
+                .name("testName")
+                .build();
+
+        secondUserDto = UserDto.builder()
+                .email("second@test.com")
+                .name("secondName")
+                .build();
+
+        testUser = userService.create(userDto);
+        secondUserFromDB = userService.create(secondUserDto);
     }
 
     @Test
-    void updateItem_whenUserIsNotOwnerId_thenReturnedOperationAccessException() {
-        Mockito.when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
+    void createItemTest() {
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
 
-        Exception e = assertThrows(ForbiddenAccessException.class,
-                () -> itemService.update(itemDto, 1L, 2L));
+        checkItemsAreTheSame(itemDtoFromDB, itemDto);
+    }
 
-        assertEquals(e.getMessage(), String.format("User with id = %d is not the owner, update is not available.", 2L));
+
+    @Test
+    void updateItemTest() {
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
+
+        ItemDto updateItemFromDB = itemService.update(testUser.getId(), itemDtoFromDB.getId(), updateItemDto);
+
+        checkItemsAreTheSame(updateItemFromDB, updateItemDto);
     }
 
     @Test
-    void updateItem_whenItemIsNotFound_thenReturnedNotFoundException() {
-        Mockito.when(itemRepository.findById(anyLong()))
-                .thenReturn(Optional.empty());
+    void getItemByIdTest() {
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
 
-        Exception e = assertThrows(NotFoundException.class,
-                () -> itemService.update(itemDto, 100L, 1L));
+        ItemDto itemByIdFromDB = itemService.findById(testUser.getId(), itemDtoFromDB.getId());
 
-        assertEquals(e.getMessage(), String.format("Item with id = %d not found.", 100L));
+        checkItemsAreTheSame(itemByIdFromDB, itemDto);
     }
-    //TODO
 
-  /*  @Test
-    void searchTest_AllParamsIsValid_thenReturnedPageableListOfItems() {
-        assertThat(itemService.search("", 0, 10), hasSize(0));
-        assertThat(itemService.search(null, 0, 10), hasSize(0));
 
-        Mockito.when(itemRepository.searchAvailableItems(anyString()))
-                .thenReturn(List.of(item));
-        Mockito.when(itemMapper.toItemDto(item))
-                        .thenReturn(itemDto);
-        Mockito.when(itemService.search("item", 0, 10))
-                        .thenReturn(itemDtoList);
+    @Test
+    void getAllUserItemsTest() {
+        List<ItemDto> testList = List.of(itemDto, updateItemDto);
+        for (ItemDto dto : testList) {
+            itemService.create(testUser.getId(), dto);
+        }
 
-        assertEquals(itemService.search("item", 0, 10), List.of(itemDto));
+        List<ItemDto> itemsFromDB = itemService.findAllItemsOfUser(testUser.getId(), 0, 3);
+
+        assertThat(itemsFromDB.size(), equalTo(testList.size()));
+        for (ItemDto dto : testList) {
+            assertThat(itemsFromDB, hasItem(allOf(
+                    hasProperty("id", notNullValue()),
+                    hasProperty("name", equalTo(dto.getName())),
+                    hasProperty("description", equalTo(dto.getDescription())),
+                    hasProperty("available", equalTo(dto.getAvailable())))));
+        }
+    }
+
+    @Test
+    void findItemsTest() {
+        String textSearch = "аккУМУляторная";
+        List<ItemDto> testList = List.of(itemDto, updateItemDto);
+        for (ItemDto dto : testList) {
+            itemService.create(testUser.getId(), dto);
+        }
+
+        List<ItemDto> itemsFromSearch = itemService.search(textSearch, 0, 3);
+
+        assertThat(itemsFromSearch.size(), equalTo(1));
+        checkItemsAreTheSame(itemsFromSearch.get(0), updateItemDto);
     }
 
     @Test
     void addCommentTest() {
-        Mockito.when(itemRepository.findById(anyLong()))
-                .thenReturn(Optional.of(item));
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(bookingRepository.findAllByItemIdAndBookerIdAndStatusIsAndEndIsBefore(
-                anyLong(), anyLong(), any(), any()))
-                .thenReturn(bookingList);
-        Mockito.when(commentRepository.save(any()))
-                .thenReturn(comment);
-        Mockito.when(commentRepository.save(any()))
-                .thenAnswer(i -> i.getArgument(0));
+        CommentDto comment = CommentDto.builder()
+                .text("Добавляем комментарий")
+                .build();
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
+        BookingShortDto bookingShortDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusNanos(1))
+                .end(LocalDateTime.now().plusNanos(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
 
-        CommentDto testComment = itemService.addComment(1L, 1L, commentDto);
+        BookingDto bookingDtoFromDB = bookingService.create(secondUserFromDB.getId(), bookingShortDto);
+        bookingService.approve(testUser.getId(), bookingDtoFromDB.getId(), true);
+        CommentDto commentFromDb = itemService.addComment(secondUserFromDB.getId(), itemDtoFromDB.getId(), comment);
+        ItemDto itemWithComment = itemService.findById(testUser.getId(), itemDtoFromDB.getId());
 
-        assertEquals(testComment.getId(), commentDto.getId());
-        assertEquals(testComment.getItem(), commentDto.getItem());
-        assertEquals(testComment.getText(), commentDto.getText());
-        assertEquals(testComment.getAuthorName(), commentDto.getAuthorName());
-    }*/
+        assertThat(commentFromDb.getId(), notNullValue());
+        assertThat(commentFromDb.getText(), equalTo(comment.getText()));
+        assertThat(commentFromDb.getAuthorName(), equalTo(secondUserDto.getName()));
+        assertThat(commentFromDb.getCreated(), notNullValue());
+        assertThat(itemWithComment.getComments().size(), equalTo(1));
+        assertThat(itemWithComment.getComments().get(0).getText(), equalTo(comment.getText()));
+        assertThat(itemWithComment.getComments().get(0).getAuthorName(), equalTo(secondUserDto.getName()));
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> bookingService.create(testUser.getId(), bookingShortDto));
+        Assertions.assertEquals("The owner cannot be a booker.", exception.getMessage());
+    }
+
+    @Test
+    void addCommentExceptionTest() {
+        CommentDto comment = CommentDto.builder()
+                .text("Добавляем комментарий")
+                .build();
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
+        BookingShortDto bookingShortDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusNanos(1))
+                .end(LocalDateTime.now().plusNanos(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        bookingService.create(secondUserFromDB.getId(), bookingShortDto);
+
+        final BadRequestException exception = Assertions.assertThrows(BadRequestException.class,
+                () -> itemService.addComment(secondUserFromDB.getId(), itemDtoFromDB.getId(), comment));
+        Assertions.assertEquals("Error: Cannot add a comment because of empty booking list.", exception.getMessage());
+    }
+
+    @Test
+    void updateItemWrongOwnerTest() {
+        ItemDto itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
+
+        final ForbiddenAccessException exception = Assertions.assertThrows(ForbiddenAccessException.class,
+                () -> itemService.update(secondUserFromDB.getId(), itemDtoFromDB.getId(), updateItemDto));
+        Assertions.assertEquals("User with id=" + secondUserFromDB.getId() + " is not the owner.",
+                exception.getMessage());
+    }
+
+    private void checkItemsAreTheSame(ItemDto itemDto, ItemDto secondItemDto) {
+        assertThat(itemDto.getId(), notNullValue());
+        assertThat(itemDto.getName(), equalTo(secondItemDto.getName()));
+        assertThat(itemDto.getDescription(), equalTo(secondItemDto.getDescription()));
+        assertThat(itemDto.getAvailable(), equalTo(secondItemDto.getAvailable()));
+    }
 
 }

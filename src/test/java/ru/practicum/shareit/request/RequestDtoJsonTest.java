@@ -17,7 +17,7 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 @JsonTest
 public class RequestDtoJsonTest {
-    /*@Autowired
+    @Autowired
     private JacksonTester<ItemRequestDto> json;
 
     @Test
@@ -33,7 +33,7 @@ public class RequestDtoJsonTest {
                 .id(1L)
                 .description("Нужна новая вещь")
                 .created(dateTime)
-                .requester()
+                .requestorId(1L)
                 .items(List.of(item))
                 .build();
 
@@ -46,6 +46,5 @@ public class RequestDtoJsonTest {
         assertThat(result).extractingJsonPathNumberValue("$.items[0].id").isEqualTo(1);
         assertThat(result).extractingJsonPathStringValue("$.items[0].name").isEqualTo("Дрель");
         assertThat(result).extractingJsonPathStringValue("$.items[0].description").isEqualTo("Простая дрель");
-    }*/
+    }
 }
-

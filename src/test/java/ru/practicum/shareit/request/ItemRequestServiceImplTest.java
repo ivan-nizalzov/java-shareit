@@ -1,139 +1,138 @@
 package ru.practicum.shareit.request;
 
+import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
-import ru.practicum.shareit.request.model.ItemRequest;
-import ru.practicum.shareit.request.repository.ItemRequestRepository;
-import ru.practicum.shareit.request.service.ItemRequestServiceImpl;
+import ru.practicum.shareit.request.servicce.ItemRequestService;
+import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserServiceImpl;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 
-@ExtendWith(MockitoExtension.class)
+@Transactional
+@SpringBootTest(
+        properties = "db.name=test",
+        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class ItemRequestServiceImplTest {
-    @InjectMocks
-    private ItemRequestServiceImpl requestService;
-    @Mock
-    private ItemRequestRepository requestRepository;
-    @Mock
-    private UserServiceImpl userService;
-    @Mock
-    private ItemRepository itemRepository;
-    private final User user = new User(1L, "User", "user@email.com");
-    private final UserDto userDto = new UserDto(1L, "User", "user@email.com");
-    private final ItemRequest itemRequest = ItemRequest.builder()
-            .id(1L)
-            .requester(user)
-            .description("description")
-            .build();
-    private final ItemRequestDto itemRequestDto = ItemRequestDto.builder()
-            .id(1L)
-            .description("description")
-            .requester(userDto)
-            .items(new ArrayList<>())
-            .build();
+    private final ItemRequestService requestService;
+    private final UserService userService;
+    private UserDto firstUser;
+    private UserDto secondUser;
+    private ItemRequestDto itemRequestDto;
+    private List<ItemRequestDto> itemRequestList;
 
-    //TODO
-    /*@Test
-    void createRequest_whenUserIsExist_thenReturnedExpectedRequest() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
+    @BeforeEach
+    public void setUp() {
+        UserDto userDto = UserDto.builder()
+                .email("test@test.com")
+                .name("testName")
+                .build();
+        UserDto secondUserDto = UserDto.builder()
+                .email("second@test.com")
+                .name("secondName")
+                .build();
+        itemRequestDto = ItemRequestDto.builder()
+                .description("Нужна новая вещь")
+                .build();
+        ItemRequestDto secondRequestDto = ItemRequestDto.builder()
+                .description("Второй запрос на нужную вещь")
+                .build();
 
-        Mockito.when(requestRepository.save(any()))
-                .thenReturn(itemRequest);
-        assertEquals(requestService.create(itemRequestDto, 1L), itemRequestDto);
-    }*/
+        itemRequestList = List.of(itemRequestDto, secondRequestDto);
 
-    @Test
-    void createRequest_whenUserIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenThrow(new NotFoundException(String.format("User with id = %d not found.", 1L)));
-
-        Exception e = assertThrows(NotFoundException.class,
-                () -> requestService.create(itemRequestDto, 100L));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 1L));
+        firstUser = userService.create(userDto);
+        secondUser = userService.create(secondUserDto);
     }
 
-    //TODO
-   /* @Test
-    void findById_whenRequestIsValid_thenReturnedExpectedRequest() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(requestRepository.findById(any()))
-                .thenReturn(Optional.ofNullable(itemRequest));
-        Mockito.when(itemRepository.findAllByItemRequest(any()))
-                .thenReturn(new ArrayList<>());
-        assertEquals(requestService.findById(1L, 1L), itemRequestDto);
-    }*/
-
     @Test
-    void findById_whenRequestIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(requestRepository.findById(anyLong()))
-                .thenThrow(new NotFoundException(String.format("Request with id = %d not found.", 1L)));
+    void createRequestTest() {
+        ItemRequestDto requestDtoFromDB = requestService.create(firstUser.getId(), itemRequestDto);
 
-        Exception e = assertThrows(NotFoundException.class,
-                () -> requestService.findById(1L, 1L));
-        assertEquals(e.getMessage(), String.format("Request with id = %d not found.", 1L));
+        assertThat(requestDtoFromDB.getId(), notNullValue());
+        assertThat(requestDtoFromDB.getDescription(), equalTo(itemRequestDto.getDescription()));
+        assertThat(requestDtoFromDB.getCreated(), notNullValue());
     }
 
-    //TODO
-   /* @Test
-    void findAllRequests_whenParamsIsExist_thenReturnedExpectedListRequests() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(itemRepository.findAllByItemRequest(any()))
-                .thenReturn(new ArrayList<>());
-        Mockito.when(requestRepository.findAllByRequesterIdIsNot(anyLong(), any()))
-                .thenReturn(List.of(itemRequest));
-        assertEquals(requestService.findAllRequests(1L, 1, 1), List.of(itemRequestDto));
-    }*/
-
     @Test
-    void findAllRequests_whenUserIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenThrow(new NotFoundException(String.format("User with id = %d not found.", 1L)));
+    void getRequestByIdTest() {
+        ItemRequestDto requestDtoFromDB = requestService.create(firstUser.getId(), itemRequestDto);
+        ItemRequestDto requestById = requestService.findById(firstUser.getId(), requestDtoFromDB.getId());
 
-        Exception e = assertThrows(NotFoundException.class,
-                () -> requestService.findAllRequests(1L, 1, 1));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 1L));
+        assertThat(requestById.getId(), equalTo(requestDtoFromDB.getId()));
+        assertThat(requestById.getDescription(), equalTo(itemRequestDto.getDescription()));
+        assertThat(requestById.getCreated(), equalTo(requestDtoFromDB.getCreated()));
     }
 
-    //TODO
-    /*@Test
-    void findAllUserRequests_whenUserIsExist_thenReturnedExpectedListRequests() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(requestRepository.findAllByRequesterIdOrderByCreatedDesc(anyLong()))
-                .thenReturn(List.of(itemRequest));
-        Mockito.when(itemRepository.findAllByItemRequest(any()))
-                .thenReturn(new ArrayList<>());
-        assertEquals(requestService.findAllUserRequests(1L), List.of(itemRequestDto));
-    }*/
-
     @Test
-    void findAllUserRequests_whenUserIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(userService.findUserById(anyLong()))
-                .thenThrow(new NotFoundException(String.format("User with id = %d not found.", 1L)));
+    void getAllRequestsByIdTest() {
+        for (ItemRequestDto itemRequest : itemRequestList) {
+            requestService.create(firstUser.getId(), itemRequest);
+        }
 
-        Exception e = assertThrows(NotFoundException.class,
-                () -> requestService.findAllUserRequests(1L));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 1L));
+        List<ItemRequestDto> requestsOfUserList = requestService.findAllRequestsOfUser(firstUser.getId());
+
+        assertThat(requestsOfUserList, hasSize(requestsOfUserList.size()));
+
+        for (ItemRequestDto itemRequest : itemRequestList) {
+            assertThat(requestsOfUserList, hasItem(allOf(
+                    hasProperty("id"), notNullValue(),
+                    hasProperty("description", equalTo(itemRequest.getDescription())),
+                    hasProperty("created", notNullValue()))));
+        }
     }
 
+    @Test
+    void getAllRequestsTest() {
+        for (ItemRequestDto itemRequest : itemRequestList) {
+            requestService.create(firstUser.getId(), itemRequest);
+        }
+
+        List<ItemRequestDto> allRequests = requestService.findAllRequestsExceptYours(secondUser.getId(), 0, 3);
+
+        assertThat(allRequests, hasSize(itemRequestList.size()));
+        for (ItemRequestDto itemRequest : itemRequestList) {
+            assertThat(allRequests, hasItem(allOf(
+                    hasProperty("id"), notNullValue(),
+                    hasProperty("description", equalTo(itemRequest.getDescription())),
+                    hasProperty("created", notNullValue()))));
+        }
+    }
+
+    @Test
+    void getRequestByIdWrongUserTest() {
+        Long badId = 999L;
+
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> requestService.create(badId, itemRequestDto));
+        Assertions.assertEquals("При запросе пользователя произошла ошибка", exception.getMessage());
+    }
+
+    @Test
+    void getRequestByIdWrongIdTest() {
+        requestService.create(firstUser.getId(), itemRequestDto);
+        Long badId = 999L;
+
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> requestService.findById(firstUser.getId(), badId));
+        Assertions.assertEquals("ItemRequest with id=" + badId + " not found.", exception.getMessage());
+    }
 }

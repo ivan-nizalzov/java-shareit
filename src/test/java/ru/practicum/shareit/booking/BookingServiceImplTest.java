@@ -1,209 +1,360 @@
 package ru.practicum.shareit.booking;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import ru.practicum.shareit.booking.dto.RequestBookingDto;
-import ru.practicum.shareit.booking.dto.ResponseBookingDto;
-import ru.practicum.shareit.booking.mapper.BookingMapperImpl;
-import ru.practicum.shareit.booking.model.Booking;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.booking.dto.BookingShortDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
-import ru.practicum.shareit.booking.repository.BookingRepository;
-import ru.practicum.shareit.booking.service.BookingServiceImpl;
-import ru.practicum.shareit.exception.*;
+import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.BadRequestException;
+import ru.practicum.shareit.exception.UnsupportedStatus;
+import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.mapper.ItemMapperImpl;
-import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
+import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.mapper.UserMapperImpl;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.service.UserServiceImpl;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.notNullValue;
 
-@ExtendWith(MockitoExtension.class)
+@Transactional
+@SpringBootTest(
+        properties = "db.name=test",
+        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class BookingServiceImplTest {
-    @InjectMocks
-    private BookingServiceImpl bookingServiceImpl;
-    @Mock
-    private UserServiceImpl userServiceImpl;
-    @Mock
-    private ItemServiceImpl itemServiceImpl;
-    @Mock
-    private BookingRepository bookingRepository;
-    @Mock
-    private BookingMapperImpl bookingMapper;
-    @Mock
-    private UserMapperImpl userMapper;
-    @Mock
-    private ItemMapperImpl itemMapper;
+    private final ItemService itemService;
+    private final UserService userService;
+    private final BookingService bookingService;
+    private UserDto testUser;
+    private UserDto secondTestUser;
+    private ItemDto itemDtoFromDB;
+    private BookingShortDto bookingShortDto;
+    private BookingShortDto secondBookingShortDto;
 
-    private final User user = new User(1L, "User", "user@email.com");
-    private final UserDto userDto = new UserDto(1L, "User", "user@email.com");
-    private final RequestBookingDto requestBookingDto = RequestBookingDto.builder()
-            .start(LocalDateTime.now())
-            .end(LocalDateTime.now().plusHours(1L))
-            .itemId(1L)
-            .build();
-    private final ItemDto itemDto = ItemDto.builder()
-            .id(1L)
-            .name("Item")
-            .description("Description")
-            .available(true)
-            .requestId(1L)
-            .build();
-    private final Item item = Item.builder()
-            .id(1L)
-            .name("Item")
-            .description("Description")
-            .available(true)
-            .owner(user)
-            .build();
-
-    private final ResponseBookingDto responseBookingDto = ResponseBookingDto.builder()
-            .start(LocalDateTime.now())
-            .end(LocalDateTime.now().plusHours(1L))
-            .item(itemDto)
-            .build();
-    private final Booking booking = Booking.builder()
-            .booker(user)
-            .id(1L)
-            .status(BookingStatus.APPROVED)
-            .item(item).build();
-
-    @Test
-    void createBooking_whenTimeIsNotValid_thenReturnedTimeDataException() {
-        RequestBookingDto bookingBadTime = RequestBookingDto.builder()
-                .start(LocalDateTime.now().plusHours(1L))
-                .end(LocalDateTime.now().minusHours(1L))
-                .itemId(1L)
+    @BeforeEach
+    public void setUp() {
+        ItemDto itemDto = ItemDto.builder()
+                .name("Дрель")
+                .description("Простая дрель")
+                .available(true)
                 .build();
 
-        Exception e = assertThrows(TimeDataException.class,
-                () -> bookingServiceImpl.create(bookingBadTime, 1L));
+        UserDto userDto = UserDto.builder()
+                .email("test@test.com")
+                .name("testName")
+                .build();
 
-        assertEquals(e.getMessage(), String.format("Invalid booking time start = %s  end = %s",
-                bookingBadTime.getStart(), bookingBadTime.getEnd()));
+        UserDto secondUserDto = UserDto.builder()
+                .email("second@test.com")
+                .name("secondName")
+                .build();
+
+        testUser = userService.create(userDto);
+        secondTestUser = userService.create(secondUserDto);
+        itemDtoFromDB = itemService.create(testUser.getId(), itemDto);
+
+        bookingShortDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusNanos(1))
+                .end(LocalDateTime.now().plusNanos(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        secondBookingShortDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusHours(3))
+                .end(LocalDateTime.now().plusHours(4))
+                .itemId(itemDtoFromDB.getId())
+                .build();
     }
 
     @Test
-    void createBooking_whenUserIsNotOwner_thenReturnedOperationAccessException() {
-        Mockito.when(userServiceImpl.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(itemServiceImpl.findItemById(anyLong(), anyLong()))
-                .thenReturn(itemDto);
-        Mockito.when(itemServiceImpl.findOwnerId(anyLong()))
-                .thenReturn(1L);
-        Mockito.when(userMapper.toUser(userDto))
-                        .thenReturn(user);
-        Mockito.when(itemMapper.toItem(itemDto))
-                        .thenReturn(item);
+    void createBookingTest() {
+        BookingDto bookingDtoFromDB = bookingService.create(secondTestUser.getId(), bookingShortDto);
 
-        final ForbiddenAccessException e = Assertions.assertThrows(ForbiddenAccessException.class,
-                () -> bookingServiceImpl.create(requestBookingDto, 1L));
-
-        assertEquals(e.getMessage(), "The owner cannot be a booker.");
+        assertThat(bookingDtoFromDB.getId(), notNullValue());
+        checkBookingsAreTheSame(bookingDtoFromDB, bookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.WAITING);
     }
 
     @Test
-    void createBooking_whenItemIsNotAvailable_thenReturnedNotAvailableException() {
-        itemDto.setAvailable(false);
-        item.setAvailable(false);
+    void approveBookingTest() {
+        BookingDto bookingDtoFromDB = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        BookingDto approveBooking = bookingService.approve(testUser.getId(), bookingDtoFromDB.getId(), true);
 
-        Mockito.when(userServiceImpl.findUserById(anyLong()))
-                .thenReturn(userDto);
-        Mockito.when(itemServiceImpl.findItemById(anyLong(), anyLong()))
-                .thenReturn(itemDto);
-        Mockito.when(itemServiceImpl.findOwnerId(anyLong()))
-                .thenReturn(2L);
+        checkBookingsAreTheSame(approveBooking, bookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
 
-        Mockito.when(userMapper.toUser(userDto))
-                .thenReturn(user);
-        Mockito.when(itemMapper.toItem(itemDto))
-                .thenReturn(item);
 
-        Exception e = assertThrows(NotAvailableException.class,
-                () -> bookingServiceImpl.create(requestBookingDto, 1L));
+    @Test
+    void getBookingByIdTest() {
+        BookingDto bookingDtoFromDB = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        BookingDto approveBooking = bookingService.approve(testUser.getId(), bookingDtoFromDB.getId(), true);
+        BookingDto bookingById = bookingService.findById(testUser.getId(), approveBooking.getId());
 
-        assertEquals(e.getMessage(), String.format("Item with id = " + item.getId() + " is not available.", 2L));
+        checkBookingsAreTheSame(bookingById, bookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> bookingService.findById(999L, approveBooking.getId()));
+        Assertions.assertEquals("The booker cannot be an owner.", exception.getMessage());
     }
 
     @Test
-    void findBookingById_whenBookingIsNotFound_thenReturnedNotFoundException() {
-        Mockito.when(bookingRepository.findById(anyLong()))
-                .thenReturn(Optional.empty());
+    void getAllBookingsTest() {
+        List<BookingShortDto> bookingDtos = List.of(bookingShortDto, secondBookingShortDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+        BookingDto secondBooking = bookingService.create(secondTestUser.getId(), secondBookingShortDto);
+        List<BookingDto> bookings = bookingService.findAllBookingsMadeByUser(secondTestUser.getId(), "ALL", 0, 3);
 
-        Exception e = assertThrows(NotFoundException.class,
-                () -> bookingServiceImpl.findBookingById(1L, 1L));
+        assertThat(bookings.size(), equalTo(bookingDtos.size()));
 
-        assertEquals(e.getMessage(), String.format("Booking with id = %d not found.", 1L));
+        for (BookingShortDto dto : bookingDtos) {
+            assertThat(bookings, hasItem(allOf(
+                    hasProperty("id", notNullValue()),
+                    hasProperty("start", equalTo(dto.getStart())),
+                    hasProperty("end", equalTo(dto.getEnd())))));
+        }
+
+        List<BookingDto> approvedBookings = bookingService.findAllBookingsMadeByUser(
+                secondTestUser.getId(), "WAITING", 0, 3);
+
+        BookingDto waitingBooking = approvedBookings.get(0);
+
+        assertThat(approvedBookings.size(), equalTo(1));
+        assertThat(waitingBooking.getId(), equalTo(secondBooking.getId()));
+        checkBookingsAreTheSame(waitingBooking, secondBookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.WAITING);
     }
 
     @Test
-    void findBookingById_whenUserIsNotOwner_thenReturnedForbiddenAccessException() {
-        Mockito.when(bookingRepository.findById(anyLong()))
-                .thenReturn(Optional.of(booking));
+    void getAllOwnerBookingsTest() {
+        List<BookingShortDto> bookingDtos = List.of(bookingShortDto, secondBookingShortDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+        BookingDto secondBooking = bookingService.create(secondTestUser.getId(), secondBookingShortDto);
 
-        Exception e = assertThrows(ForbiddenAccessException.class,
-                () -> bookingServiceImpl.findBookingById(1L, 100L));
+        List<BookingDto> bookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "ALL", 0, 3);
 
-        assertEquals(e.getMessage(), String.format("User with id = %d is not the owner, access to booking is denied.", 100L));
+        assertThat(bookings.size(), equalTo(bookingDtos.size()));
+        for (BookingShortDto dto : bookingDtos) {
+            assertThat(bookings, hasItem(allOf(
+                    hasProperty("id", notNullValue()),
+                    hasProperty("start", equalTo(dto.getStart())),
+                    hasProperty("end", equalTo(dto.getEnd())))));
+        }
+
+        List<BookingDto> approvedBookings = bookingService.findAllBookingsOfItemsOwner(
+                testUser.getId(), "WAITING", 0, 3);
+
+        BookingDto waitingBooking = approvedBookings.get(0);
+
+        assertThat(approvedBookings.size(), equalTo(1));
+        assertThat(waitingBooking.getId(), equalTo(secondBooking.getId()));
+        checkBookingsAreTheSame(waitingBooking, secondBookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.WAITING);
     }
 
     @Test
-    void getAllBookings_whenStateIsUnknown_thenReturnedBadRequestException() {
-        Mockito.when(userServiceImpl.findUserById(anyLong()))
-                .thenReturn(userDto);
+    void approveBookingWrongOwnerTest() {
+        BookingDto bookingDtoFromDB = bookingService.create(secondTestUser.getId(), bookingShortDto);
 
-        Exception e = assertThrows(BadRequestException.class,
-                () -> bookingServiceImpl.findAllBookingsByUser("хslfs", 1L, 0, 10));
-
-        assertEquals(e.getMessage(), "Unknown state: хslfs");
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> bookingService.approve(secondTestUser.getId(), bookingDtoFromDB.getId(), true));
+        Assertions.assertEquals("User with id=" + secondTestUser.getId() + " is not the owner of item with id="
+                + bookingDtoFromDB.getItem().getId(), exception.getMessage());
     }
 
     @Test
-    void approve_whenBookingDecision_thenReturnedAlreadyExistsException() {
-        responseBookingDto.setStatus(BookingStatus.APPROVED);
+    void approveBookingTwiceErrorTest() {
+        BookingDto bookingDtoFromDB = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        bookingService.approve(testUser.getId(), bookingDtoFromDB.getId(), true);
 
-        Mockito.when(bookingRepository.findById(anyLong()))
-                .thenReturn(Optional.of(booking));
-        Mockito.when(bookingRepository.findById(anyLong()))
-                .thenReturn(Optional.ofNullable(booking));
-        Mockito.when(bookingServiceImpl.findBookingById(1L, 1L))
-                        .thenReturn(responseBookingDto);
-        Mockito.when(itemServiceImpl.findOwnerId(anyLong()))
-                .thenReturn(1L);
-
-        Exception e = assertThrows(AlreadyExistsException.class,
-                () -> bookingServiceImpl.approve(1L, 1L, true));
-
-        assertEquals(e.getMessage(), "The booking decision has already been made.");
+        final BadRequestException exception = Assertions.assertThrows(BadRequestException.class,
+                () -> bookingService.approve(testUser.getId(), bookingDtoFromDB.getId(), true));
+        Assertions.assertEquals("The decision has been already made.", exception.getMessage());
     }
 
     @Test
-    void approve_whenUserIsNotOwner_thenReturnedForbiddenAccessException() {
-        Mockito.when(bookingRepository.findById(anyLong()))
-                .thenReturn(Optional.of(booking));
-        Mockito.when(bookingServiceImpl.findBookingById(1l, 1l))
-                        .thenReturn(responseBookingDto);
-        Mockito.when(itemServiceImpl.findOwnerId(anyLong()))
-                .thenReturn(2L);
+    void getAllBookingsNonExistentStateTest() {
+        String nonExistentState = "nonExistentState";
+        bookingService.create(secondTestUser.getId(), bookingShortDto);
 
-        Exception e = assertThrows(ForbiddenAccessException.class,
-                () -> bookingServiceImpl.approve(1L, 1L, true));
+        final UnsupportedStatus exception = Assertions.assertThrows(UnsupportedStatus.class,
+                () -> bookingService.findAllBookingsMadeByUser(secondTestUser.getId(), nonExistentState, 0, 3));
+        Assertions.assertEquals("Unknown state: " + nonExistentState, exception.getMessage());
+    }
 
-        assertEquals(e.getMessage(), String.format("User with id = %d is not the owner, no access to booking.", 1L));
+    @Test
+    void getAllBookingsRejectedStateTest() {
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingShortDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), false);
+
+        List<BookingDto> rejectedBookings = bookingService.findAllBookingsMadeByUser(
+                secondTestUser.getId(), "REJECTED", 0, 3);
+
+        BookingDto rejectedBooking = rejectedBookings.get(0);
+
+        assertThat(rejectedBookings.size(), equalTo(1));
+        checkBookingsAreTheSame(rejectedBooking, bookingShortDto, secondTestUser, itemDtoFromDB, BookingStatus.REJECTED);
+    }
+
+    @Test
+    void getAllBookingsCurrentStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().minusHours(1))
+                .end(LocalDateTime.now().plusHours(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+
+        List<BookingDto> currentBookings = bookingService.findAllBookingsMadeByUser(
+                secondTestUser.getId(), "CURRENT", 0, 3);
+
+        BookingDto currentBooking = currentBookings.get(0);
+
+        assertThat(currentBookings.size(), equalTo(bookingDtos.size()));
+        checkBookingsAreTheSame(currentBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
+
+    @Test
+    void getAllBookingsFutureStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusHours(1))
+                .end(LocalDateTime.now().plusHours(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+
+        List<BookingDto> futureBookings = bookingService.findAllBookingsMadeByUser(
+                secondTestUser.getId(), "FUTURE", 0, 3);
+
+        BookingDto futureBooking = futureBookings.get(0);
+
+        assertThat(futureBookings.size(), equalTo(bookingDtos.size()));
+        assertThat(futureBooking.getId(), equalTo(firstBooking.getId()));
+        checkBookingsAreTheSame(futureBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.WAITING);
+    }
+
+    @Test
+    void getAllBookingsPastStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().minusHours(2))
+                .end(LocalDateTime.now().minusHours(1))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+
+        List<BookingDto> pastBookings = bookingService.findAllBookingsMadeByUser(secondTestUser.getId(), "PAST", 0, 3);
+        BookingDto pastBooking = pastBookings.get(0);
+
+        assertThat(pastBookings.size(), equalTo(bookingDtos.size()));
+        assertThat(pastBooking.getId(), equalTo(firstBooking.getId()));
+        checkBookingsAreTheSame(pastBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
+
+    @Test
+    void getAllOwnerBookingsCurrentStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().minusHours(1))
+                .end(LocalDateTime.now().plusHours(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+
+        List<BookingDto> currentBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "CURRENT", 0, 3);
+        BookingDto currentBooking = currentBookings.get(0);
+
+        assertThat(currentBookings.size(), equalTo(bookingDtos.size()));
+        assertThat(currentBooking.getId(), equalTo(firstBooking.getId()));
+        checkBookingsAreTheSame(currentBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
+
+    @Test
+    void getAllOwnerBookingsFutureStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusHours(1))
+                .end(LocalDateTime.now().plusHours(2))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+
+        List<BookingDto> futureBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "FUTURE", 0, 3);
+        BookingDto futureBooking = futureBookings.get(0);
+
+        assertThat(futureBookings.size(), equalTo(bookingDtos.size()));
+        assertThat(futureBooking.getId(), equalTo(firstBooking.getId()));
+        checkBookingsAreTheSame(futureBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
+
+    @Test
+    void getAllOwnerBookingsPastStateTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().minusHours(2))
+                .end(LocalDateTime.now().minusHours(1))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+        List<BookingShortDto> bookingDtos = List.of(bookingDto);
+        BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
+        bookingService.approve(testUser.getId(), firstBooking.getId(), true);
+
+        List<BookingDto> pastBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "PAST", 0, 3);
+        BookingDto pastBooking = pastBookings.get(0);
+
+        assertThat(pastBookings.size(), equalTo(bookingDtos.size()));
+        assertThat(pastBooking.getId(), equalTo(firstBooking.getId()));
+        checkBookingsAreTheSame(pastBooking, bookingDto, secondTestUser, itemDtoFromDB, BookingStatus.APPROVED);
+    }
+
+    @Test
+    void getAllOwnerBookingsUserHasNothingTest() {
+        final BadRequestException exception = Assertions.assertThrows(BadRequestException.class,
+                () -> bookingService.findAllBookingsOfItemsOwner(secondTestUser.getId(), "ALL", 0, 3));
+        Assertions.assertEquals("У пользователя нет ни одной вещи!", exception.getMessage());
+    }
+
+    @Test
+    void createBookingItemStartLaterThanFinishTest() {
+        BookingShortDto bookingDto = BookingShortDto.builder()
+                .start(LocalDateTime.now().plusHours(2))
+                .end(LocalDateTime.now().plusHours(1))
+                .itemId(itemDtoFromDB.getId())
+                .build();
+
+        final BadRequestException exception = Assertions.assertThrows(BadRequestException.class,
+                () -> bookingService.create(secondTestUser.getId(), bookingDto));
+        Assertions.assertEquals("Invalid booking start time and end time.", exception.getMessage());
+    }
+
+    private void checkBookingsAreTheSame(
+            BookingDto booking, BookingShortDto secondBooking, UserDto user, ItemDto item, BookingStatus status) {
+        assertThat(booking.getId(), notNullValue());
+        assertThat(booking.getStatus(), equalTo(status));
+        assertThat(booking.getStart(), equalTo(secondBooking.getStart()));
+        assertThat(booking.getEnd(), equalTo(secondBooking.getEnd()));
+        assertThat(booking.getBooker().getId(), equalTo(user.getId()));
+        assertThat(booking.getItem().getId(), equalTo(item.getId()));
+        assertThat(booking.getItem().getName(), equalTo(item.getName()));
     }
 
 }

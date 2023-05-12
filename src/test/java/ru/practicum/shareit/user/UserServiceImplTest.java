@@ -1,112 +1,142 @@
 package ru.practicum.shareit.user;
 
+import lombok.RequiredArgsConstructor;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
-import ru.practicum.shareit.user.service.UserServiceImpl;
+import ru.practicum.shareit.user.service.UserService;
 
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.validation.ConstraintViolationException;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.notNullValue;
 
-@ExtendWith(MockitoExtension.class)
+@Transactional
+@SpringBootTest(
+        properties = "db.name=test",
+        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 public class UserServiceImplTest {
-    @InjectMocks
-    private UserServiceImpl userService;
-    @Mock
-    private UserRepository userRepository;
+    private final UserService userService;
+    private final UserMapper userMapper;
+    private final EntityManager em;
+    private UserDto userDto;
+    private UserDto secondUserDto;
 
-    private final User user = new User(1L, "User", "user@email.com");
-    private final UserDto userDto = new UserDto(1L, "User", "user@email.com");
-    private final User user2 = new User(2L, "User2", "user2@email.ru");
-    private final UserDto userDto2 = new UserDto(2L, "User2", "user2@email.ru");
+    @BeforeEach
+    public void setUp() {
+        userDto = UserDto.builder()
+                .email("test@test.com")
+                .name("testName")
+                .build();
 
-    //TODO
-    /*@Test
+        secondUserDto = UserDto.builder()
+                .email("second@test.com")
+                .name("secondName")
+                .build();
+    }
+
+    @Test
     void createUserTest() {
-        Mockito.when(userRepository.save(any()))
-                .thenReturn(user);
+        userService.create(userDto);
 
-        assertEquals(userService.create(userDto), userDto);
-    }*/
+        TypedQuery<User> query = em.createQuery("Select u from User u where u.email = :email", User.class);
+        User testUser = query.setParameter("email", userDto.getEmail())
+                .getSingleResult();
 
-    //TODO
-    /*@Test
-    void findById_whenUserIsExist_thenReturnedExpectedUser() {
-        Mockito.when(userRepository.findById(anyLong()))
-                .thenReturn(Optional.of(user));
-
-        assertEquals(userService.findUserById(1L), userDto);
-    }*/
-
-    @Test
-    void findById_whenUserIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(userRepository.findById(anyLong()))
-                .thenReturn(Optional.empty());
-
-        Exception e = assertThrows(NotFoundException.class, () -> userService.findUserById(1L));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 1L));
-    }
-
-    //TODO
-    /*@Test
-    void findAllUsers_whenUsersIsExist_thenReturnedExpectedListUsers() {
-        Mockito.when(userRepository.findAll())
-                .thenReturn(List.of(user, user2));
-
-        List<UserDto> users = userService.findAllUsers();
-        assertEquals(users, List.of(userDto, userDto2));
-    }*/
-
-    //TODO
-    /*@Test
-    void findAllUsers_whenUsersIsNotExist_thenReturnedEmptyList() {
-        Mockito.when(userRepository.findAll())
-                .thenReturn(new ArrayList<>());
-
-        assertEquals(userService.findAllUsers(), new ArrayList<>());
-    }*/
-
-    //TODO test
-    /*@Test
-    void updateUser_whenUserIsExist_thenReturnedExpectedUpdatedUser() {
-        Mockito.when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
-
-        User updateUser = new User(1L, "updateUser", "updateUser@email.ru");
-        UserDto updateUserDto = new UserDto(1L, "updateUser", "updateUser@email.ru");
-
-        Mockito.when(userRepository.save(any()))
-                .thenReturn(updateUser);
-
-        assertEquals(userService.update(updateUserDto, 1L), updateUserDto);
-    }*/
-
-    @Test
-    void updateUser_whenUserIsNotExist_thenReturnedNotFoundException() {
-        Mockito.when(userRepository.findById(anyLong()))
-                .thenReturn(Optional.empty());
-
-        Exception e = assertThrows(NotFoundException.class, () -> userService.findUserById(3L));
-        assertEquals(e.getMessage(), String.format("User with id = %d not found.", 3L));
+        checkUsersAreTheSame(testUser, userDto, 1L);
     }
 
     @Test
-    void deleteUser() {
-        userService.delete(1L);
-        Mockito.verify(userRepository).deleteById(1L);
+    void updateUserTest() {
+        userService.create(userDto);
+        UserDto updateUser = UserDto.builder()
+                .email("update@test.com")
+                .name("updateName")
+                .build();
+        userService.update(1L, updateUser);
+
+        TypedQuery<User> query = em.createQuery("Select u from User u where u.email = :email", User.class);
+        User testUser = query.setParameter("email", updateUser.getEmail())
+                .getSingleResult();
+
+        checkUsersAreTheSame(testUser, updateUser, 1L);
     }
 
+    @Test
+    void getUserByIdTest() {
+        UserDto testUser = userService.create(userDto);
+        UserDto userFromDB = userService.findById(testUser.getId());
+
+        checkUsersAreTheSame(userMapper.toUser(userFromDB), userDto, 1L);
+    }
+
+    @Test
+    void getAllUsersTest() {
+        List<UserDto> testList = List.of(userDto, secondUserDto);
+        for (UserDto dto : testList) {
+            userService.create(dto);
+        }
+
+        List<UserDto> dtoFromDB = userService.findAllUsers();
+
+        assertThat(dtoFromDB.size(), equalTo(testList.size()));
+        for (UserDto user : testList) {
+            assertThat(dtoFromDB, hasItem(allOf(
+                    hasProperty("id", notNullValue()),
+                    hasProperty("name", equalTo(user.getName())),
+                    hasProperty("email", equalTo(user.getEmail())))));
+        }
+    }
+
+    @Test
+    void deleteUserTest() {
+        userService.create(userDto);
+        UserDto userFromDB = userService.findAllUsers().get(0);
+
+        userService.delete(userFromDB.getId());
+        List<UserDto> dtoFromDB = userService.findAllUsers();
+
+        assertThat(dtoFromDB.size(), equalTo(0));
+        final NotFoundException exception = Assertions.assertThrows(NotFoundException.class,
+                () -> userService.findById(userFromDB.getId()));
+        Assertions.assertEquals("User with id=" + userFromDB.getId() + " not found.", exception.getMessage());
+    }
+
+    @Test
+    void createUserInvalidEmailTest() {
+        UserDto userDtoBadEmail = userDto = UserDto.builder()
+                .email("bademail.com")
+                .name("testName")
+                .build();
+
+        Assertions.assertThrows(ConstraintViolationException.class, () -> userService.create(userDtoBadEmail));
+    }
+
+    private void checkUsersAreTheSame(User user, UserDto userDto, Long id) {
+        assertThat(user.getId(), equalTo(id));
+        assertThat(user.getName(), equalTo(userDto.getName()));
+        assertThat(user.getEmail(), equalTo(userDto.getEmail()));
+    }
 }
+
+
+

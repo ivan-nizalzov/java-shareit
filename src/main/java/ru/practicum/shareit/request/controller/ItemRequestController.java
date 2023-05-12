@@ -1,50 +1,59 @@
 package ru.practicum.shareit.request.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import ru.practicum.shareit.request.servicce.ItemRequestService;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
-import ru.practicum.shareit.request.service.ItemRequestService;
 
 import javax.validation.Valid;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
+import javax.validation.constraints.Min;
 import java.util.List;
 
-@Slf4j
+import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
+
+@Validated
 @RestController
 @RequestMapping(path = "/requests")
 @RequiredArgsConstructor
 public class ItemRequestController {
-    private final ItemRequestService itemRequestService;
-    private final String USER_HEADER = "X-Sharer-User-Id";
+
+    private final ItemRequestService requestService;
+
     @PostMapping
     public ResponseEntity<ItemRequestDto> create(@RequestHeader(USER_HEADER) Long userId,
-                                                 @Valid @RequestBody ItemRequestDto itemRequestDto) {
-        log.debug("POST /requests : create new request");
-        return ResponseEntity.ok(itemRequestService.create(itemRequestDto, userId));
-    }
+                                                @Valid @RequestBody ItemRequestDto itemRequestDto) {
 
-    @GetMapping("{requestId}")
-    public ResponseEntity<ItemRequestDto> findRequestById(@RequestHeader(USER_HEADER) Long userId,
-                                                          @PathVariable Long requestId) {
-        log.debug("GET /requests/{requestId} : get request by id");
-        return ResponseEntity.ok(itemRequestService.findById(userId, requestId));
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<List<ItemRequestDto>> findAllRequests(@RequestHeader(USER_HEADER) Long userId,
-                                                                @PositiveOrZero @RequestParam(defaultValue = "0") Integer from,
-                                                                @Positive @RequestParam(defaultValue = "10") Integer size) {
-        log.debug("GET /requests/all : get all requests");
-        return ResponseEntity.ok(itemRequestService.findAllRequests(userId, from, size));
+        return ResponseEntity.ok(requestService.create(userId, itemRequestDto));
     }
 
     @GetMapping
-    public ResponseEntity<List<ItemRequestDto>> getAllUserRequests(@RequestHeader(USER_HEADER) Long userId) {
-        log.debug("GET GET /requests : get all requests of user");
-        return ResponseEntity.ok(itemRequestService.findAllUserRequests(userId));
+    public ResponseEntity<List<ItemRequestDto>> findAllRequestsOfUser(@RequestHeader(USER_HEADER) Long userId) {
+        return ResponseEntity.ok(requestService.findAllRequestsOfUser(userId));
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ItemRequestDto>> findAllRequestsExceptYours(
+            @RequestHeader(USER_HEADER) Long userId,
+            @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
+            @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
+
+        return ResponseEntity.ok(requestService.findAllRequestsExceptYours(userId, from, size));
+    }
+
+    @GetMapping("{requestId}")
+    public ResponseEntity<ItemRequestDto> findById(@RequestHeader(USER_HEADER) Long userId,
+                                   @PathVariable Long requestId) {
+
+        return ResponseEntity.ok(requestService.findById(userId, requestId));
     }
 
 }
