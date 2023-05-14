@@ -5,14 +5,12 @@ import org.mapstruct.Mapping;
 import ru.practicum.shareit.item.comment.dto.CommentDto;
 import ru.practicum.shareit.item.comment.model.Comment;
 
-import java.util.List;
-
 @Mapper(componentModel = "spring")
 public interface CommentMapper {
 
-    @Mapping(target = "authorName", source = "author.name")
-    CommentDto toDto(Comment comment);
+    @Mapping(target = "authorName", source = "comment.author.name")
+    CommentDto toCommentDto(Comment comment);
+
     Comment toComment(CommentDto commentDto);
-    List<CommentDto> toDtoList(List<Comment> comments);
 
 }

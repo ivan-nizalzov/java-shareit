@@ -1,30 +1,43 @@
 package ru.practicum.shareit.item.comment.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.validation.constraints.NotEmpty;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
-@Entity
-@Table(name = "comments")
+@Getter
+@Setter
 @Builder
+@Entity
 @AllArgsConstructor
-@RequiredArgsConstructor
-@Data
+@NoArgsConstructor
+@Table(name = "Comments")
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "text", nullable = false)
+    @NotEmpty
     private String text;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "item_id")
     private Item item;
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "author_id")
     private User author;
-    @Column(name = "created", nullable = false)
     private LocalDateTime created;
+
 }
