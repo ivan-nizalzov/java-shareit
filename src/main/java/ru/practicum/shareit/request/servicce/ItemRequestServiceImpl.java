@@ -6,11 +6,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.repository.ItemRepository;
-import ru.practicum.shareit.request.repository.RequestRepository;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.mapper.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
@@ -22,17 +26,19 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ItemRequestServiceImpl implements ItemRequestService {
-    private final RequestRepository repository;
+    private final ItemRequestRepository itemRequestRepository;
     private final UserService userService;
     private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
     private final ItemRequestMapper itemRequestMapper;
+    private final ItemMapper itemMapper;
 
     @Transactional
     public ItemRequestDto create(Long userId, ItemRequestDto itemRequestDto) {
         LocalDateTime dateTime = LocalDateTime.now();
         ItemRequest newItemRequest = itemRequestMapper.toItemRequest(
-                itemRequestDto, userService.findById(userId).getId(), dateTime);
-        ItemRequest itemRequest = repository.save(newItemRequest);
+                itemRequestDto, getUserById(userId), dateTime);
+        ItemRequest itemRequest = itemRequestRepository.save(newItemRequest);
 
         log.info("Created new itemRequest with id={}.", itemRequest.getId());
 
@@ -42,12 +48,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     public List<ItemRequestDto> findAllRequestsOfUser(Long userId) {
         checkUserInDb(userId);
 
-        List<ItemRequest> itemRequestList = repository.findByRequestorIdOrderByCreatedAsc(userId);
+        List<ItemRequest> itemRequestList = itemRequestRepository.findByRequestorIdOrderByCreatedAsc(userId);
         log.info("Found all item requests ({}) of user with id={}.", itemRequestList.size(), userId);
 
         return itemRequestList.stream()
                 .map(itemRequestMapper::toItemRequestDto)
-                .peek(itemRequestDto -> itemRequestDto.setItems(itemRepository.findByRequestId(itemRequestDto.getId())))
+                .peek(itemRequestDto -> itemRequestDto.setItems(getItemDtoListByRequestId(itemRequestDto.getId())))
                 .collect(Collectors.toList());
     }
 
@@ -57,23 +63,23 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         checkUserInDb(userId);
 
         PageRequest page = PageRequest.of(from, size);
-        List<ItemRequest> itemRequestsList = repository.findByRequestorIdNotOrderByCreatedAsc(userId, page);
+        List<ItemRequest> itemRequestsList = itemRequestRepository.findByRequestorIdNotOrderByCreatedAsc(userId, page);
         log.info("Found all item requests ({}) except made by user with id={}.", itemRequestsList.size(), userId);
 
         return itemRequestsList.stream()
                 .map(itemRequestMapper::toItemRequestDto)
-                .peek(itemRequestDto -> itemRequestDto.setItems(itemRepository.findByRequestId(itemRequestDto.getId())))
+                .peek(itemRequestDto -> itemRequestDto.setItems(getItemDtoListByRequestId(itemRequestDto.getId())))
                 .collect(Collectors.toList());
     }
 
     public ItemRequestDto findById(Long userId, Long requestId) {
         checkUserInDb(userId);
 
-        ItemRequest itemRequest = repository.findById(requestId)
+        ItemRequest itemRequest = itemRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException("ItemRequest with id=" + requestId + " not found."));
 
         ItemRequestDto itemRequestDto = itemRequestMapper.toItemRequestDto(itemRequest);
-        itemRequestDto.setItems(itemRepository.findByRequestId(requestId));
+        itemRequestDto.setItems(getItemDtoListByRequestId(requestId));
 
         log.info("Found item request with id={}.", requestId);
 
@@ -82,6 +88,23 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private void checkUserInDb(Long userId) {
         userService.findById(userId);
+    }
+
+    private List<ItemDto> getItemDtoListByRequestId(Long requestId) {
+        ItemRequest itemRequest = itemRequestRepository.findById(requestId)
+                .orElseThrow(() -> new NotFoundException("Item request with id=" + requestId + " not found."));
+
+        return itemRepository.findByRequest(itemRequest).stream()
+                .map(itemMapper::toItemDto)
+                .collect(Collectors.toList());
+    }
+
+    private User getUserById(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found."));
     }
 
 }

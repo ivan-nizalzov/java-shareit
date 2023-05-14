@@ -7,7 +7,10 @@ import org.springframework.boot.test.json.JacksonTester;
 import org.springframework.boot.test.json.JsonContent;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dto.ItemRequestDto;
+import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.io.IOException;
@@ -25,14 +28,14 @@ public class BookingDtoJsonTest {
     void testItemDto() throws IOException {
         LocalDateTime dateTime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
-        Item item = Item.builder()
+        ItemDto item = ItemDto.builder()
                 .id(1L)
                 .name("Дрель")
                 .description("Простая дрель")
                 .available(true)
                 .build();
 
-        User user = User.builder()
+        UserDto user = UserDto.builder()
                 .id(1L)
                 .email("test@test.com")
                 .name("testName")
@@ -59,4 +62,5 @@ public class BookingDtoJsonTest {
         assertThat(result).extractingJsonPathStringValue("$.booker.name").isEqualTo("testName");
         assertThat(result).extractingJsonPathStringValue("$.booker.email").isEqualTo("test@test.com");
     }
+
 }

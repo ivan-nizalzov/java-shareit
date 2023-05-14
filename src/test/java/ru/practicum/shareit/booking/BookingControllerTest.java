@@ -12,7 +12,9 @@ import ru.practicum.shareit.booking.controller.BookingController;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
 
 import java.nio.charset.StandardCharsets;
@@ -47,14 +49,14 @@ public class BookingControllerTest {
 
     @BeforeEach
     public void setUp() {
-        Item item = Item.builder()
+        ItemDto item = ItemDto.builder()
                 .id(1L)
                 .name("Дрель")
                 .description("Простая дрель")
                 .available(true)
                 .build();
 
-        User user = User.builder()
+        UserDto user = UserDto.builder()
                 .id(1L)
                 .email("test@test.com")
                 .name("testName")

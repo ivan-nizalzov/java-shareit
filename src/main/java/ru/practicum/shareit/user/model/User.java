@@ -30,4 +30,5 @@ public class User {
     @Column(name = "email", unique = true)
     @Email
     private String email;
+
 }

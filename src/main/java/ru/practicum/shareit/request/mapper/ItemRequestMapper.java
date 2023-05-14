@@ -4,28 +4,20 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
 
 @Mapper(componentModel = "spring")
 public interface ItemRequestMapper {
 
-    default ItemRequestDto toItemRequestDto(ItemRequest itemRequest) {
-        return ItemRequestDto.builder()
-                .id(itemRequest.getId())
-                .description(itemRequest.getDescription())
-                .created(itemRequest.getCreated())
-                .requestorId(itemRequest.getRequestorId())
-                .build();
-    }
+    @Mapping(target = "requestorId", source = "itemRequest.requestor.id")
+    ItemRequestDto toItemRequestDto(ItemRequest itemRequest);
 
-    default ItemRequest toItemRequest(ItemRequestDto itemRequestDto, Long userId, LocalDateTime dateTime) {
-        return ItemRequest.builder()
-                .id(itemRequestDto.getId())
-                .description(itemRequestDto.getDescription())
-                .created(dateTime)
-                .requestorId(userId)
-                .build();
-    }
+    @Mapping(target = "id", source = "itemRequestDto.id")
+    @Mapping(target = "description", source = "itemRequestDto.description")
+    @Mapping(target = "created", source = "dateTime")
+    @Mapping(target = "requestor", source = "user")
+    ItemRequest toItemRequest(ItemRequestDto itemRequestDto, User user, LocalDateTime dateTime);
 
 }

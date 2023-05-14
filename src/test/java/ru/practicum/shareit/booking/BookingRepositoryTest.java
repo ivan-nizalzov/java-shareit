@@ -26,9 +26,9 @@ public class BookingRepositoryTest {
     @Autowired
     private BookingRepository bookingRepository;
     @Autowired
-    private ItemRepository itemRepositoryJpa;
+    private ItemRepository itemRepository;
     @Autowired
-    private UserRepository userRepositoryJpa;
+    private UserRepository userRepository;
     private Item item;
     private Booking booking;
     private User user;
@@ -72,8 +72,8 @@ public class BookingRepositoryTest {
     @Test
     void getAllBookingsByIdTest() {
         Pageable pageable = PageRequest.of(0, 2);
-        User userFromDB = userRepositoryJpa.save(user);
-        itemRepositoryJpa.save(item);
+        User userFromDB = userRepository.save(user);
+        itemRepository.save(item);
         bookingRepository.save(booking);
 
         List<Booking> pageBookings = bookingRepository.getAllBookingsById(userFromDB.getId(), pageable);
@@ -85,8 +85,8 @@ public class BookingRepositoryTest {
 
     @Test
     void findBookingsByItemTest() {
-        User userFromDB = userRepositoryJpa.save(user);
-        Item itemFromDB = itemRepositoryJpa.save(item);
+        User userFromDB = userRepository.save(user);
+        Item itemFromDB = itemRepository.save(item);
         Booking bookingSaved = bookingRepository.save(booking);
 
         List<Booking> listBookings = bookingRepository.findBookingsByItem(
@@ -105,4 +105,5 @@ public class BookingRepositoryTest {
         Assertions.assertEquals(booking.getBooker(), secondBooking.getBooker());
         Assertions.assertEquals(booking.getStatus(), secondBooking.getStatus());
     }
+
 }

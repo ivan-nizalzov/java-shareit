@@ -20,6 +20,8 @@ import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.comment.model.Comment;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
+import ru.practicum.shareit.request.model.ItemRequest;
+import ru.practicum.shareit.request.repository.ItemRequestRepository;
 import ru.practicum.shareit.user.service.UserService;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
@@ -41,6 +43,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
     private final BookingMapper bookingMapper;
     private final ItemMapper itemMapper;
     private final CommentMapper commentMapper;
@@ -49,6 +52,7 @@ public class ItemServiceImpl implements ItemService {
     @Transactional
     public ItemDto create(Long userId, ItemDto itemDto) {
         Item newItem = itemMapper.toItem(itemDto, userMapper.toUser(userService.findById(userId)));
+        newItem.setRequest(getItemRequest(itemDto.getRequestId()));
         Item item = itemRepository.save(newItem);
         log.info("Created new item with id={}.", item.getId());
 
@@ -164,6 +168,14 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return itemDto;
+    }
+
+    private ItemRequest getItemRequest(Long itemRequestId) {
+        if (itemRequestId == null) {
+            return null;
+        }
+        return itemRequestRepository.findById(itemRequestId)
+                .orElseThrow(() -> new NotFoundException("Item request with id=" + itemRequestId + " not found."));
     }
 
 }
