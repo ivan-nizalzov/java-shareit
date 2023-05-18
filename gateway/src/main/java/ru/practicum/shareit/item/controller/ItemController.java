@@ -19,8 +19,6 @@ import ru.practicum.shareit.item.dto.ItemDto;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import java.util.List;
-import java.util.Objects;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 

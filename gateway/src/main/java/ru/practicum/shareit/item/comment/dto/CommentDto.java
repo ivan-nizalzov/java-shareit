@@ -1,6 +1,5 @@
 package ru.practicum.shareit.item.comment.dto;
 
-import lombok.Builder;
 import lombok.Getter;
 
 import javax.validation.constraints.NotEmpty;

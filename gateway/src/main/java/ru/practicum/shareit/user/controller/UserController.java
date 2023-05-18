@@ -16,7 +16,6 @@ import ru.practicum.shareit.user.client.UserClient;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @Slf4j
 @RestController

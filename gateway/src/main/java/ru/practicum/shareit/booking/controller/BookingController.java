@@ -20,7 +20,6 @@ import ru.practicum.shareit.exception.UnsupportedStatus;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
-import java.util.List;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 
