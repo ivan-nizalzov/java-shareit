@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   gateway:
-    build: shareIt-gateway
+    build: gateway
     image: shareit-gateway
     container_name: shareit-gateway-container
     ports:
@@ -14,7 +14,7 @@ services:
       - TZ=GMT
 
   server:
-    build: shareIt-server
+    build: server
     image: shareit-server
     container_name: shareit-server-container
     ports:
