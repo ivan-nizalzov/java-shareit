@@ -22,8 +22,8 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.repository.ItemRequestRepository;
-import ru.practicum.shareit.user.service.UserService;
-import ru.practicum.shareit.user.mapper.UserMapper;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,7 +39,7 @@ import static java.util.Optional.ofNullable;
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
-    private final UserService userService;
+    private final UserRepository userRepository;
     private final ItemRepository itemRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
@@ -47,11 +47,10 @@ public class ItemServiceImpl implements ItemService {
     private final BookingMapper bookingMapper;
     private final ItemMapper itemMapper;
     private final CommentMapper commentMapper;
-    private final UserMapper userMapper;
 
     @Transactional
     public ItemDto create(Long userId, ItemDto itemDto) {
-        Item newItem = itemMapper.toItem(itemDto, userMapper.toUser(userService.findById(userId)));
+        Item newItem = itemMapper.toItem(itemDto, getUserById(userId));
         newItem.setRequest(getItemRequest(itemDto.getRequestId()));
         Item item = itemRepository.save(newItem);
         log.info("Created new item with id={}.", item.getId());
@@ -176,6 +175,14 @@ public class ItemServiceImpl implements ItemService {
         }
         return itemRequestRepository.findById(itemRequestId)
                 .orElseThrow(() -> new NotFoundException("Item request with id=" + itemRequestId + " not found."));
+    }
+
+    private User getUserById(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found."));
     }
 
 }

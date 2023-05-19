@@ -6,6 +6,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.UnsupportedStatus;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -15,7 +16,6 @@ import ru.practicum.shareit.request.mapper.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
-import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ItemRequestServiceImpl implements ItemRequestService {
     private final ItemRequestRepository itemRequestRepository;
-    private final UserService userService;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final ItemRequestMapper itemRequestMapper;
@@ -87,7 +86,11 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     private void checkUserInDb(Long userId) {
-        userService.findById(userId);
+        if (userId == null) {
+            throw new UnsupportedStatus("UserId is null");
+        }
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User with id=" + userId + " not found."));
     }
 
     private List<ItemDto> getItemDtoListByRequestId(Long requestId) {
