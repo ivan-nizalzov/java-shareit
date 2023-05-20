@@ -13,9 +13,7 @@ import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.model.User;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -152,7 +150,7 @@ public class BookingControllerTest {
 
     @Test
     void getAllOwnerBookingsTest() throws Exception {
-        when(bookingService.findAllBookingsOfItemsOwner(anyLong(), anyString(), anyInt(), anyInt()))
+        when(bookingService.findAllBookingsOfItems(anyLong(), anyString(), anyInt(), anyInt()))
                 .thenReturn(bookings);
 
         mvc.perform(get("/bookings/owner")

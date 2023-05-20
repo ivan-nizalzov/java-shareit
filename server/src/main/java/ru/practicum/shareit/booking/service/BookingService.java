@@ -15,6 +15,6 @@ public interface BookingService {
 
     List<BookingDto> findAllBookingsMadeByUser(Long userId, String text, Integer from, Integer size);
 
-    List<BookingDto> findAllBookingsOfItemsOwner(Long userId, String text, Integer from, Integer size);
+    List<BookingDto> findAllBookingsOfItems(Long userId, String text, Integer from, Integer size);
 
 }

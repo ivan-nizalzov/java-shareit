@@ -146,7 +146,7 @@ public class BookingServiceImplTest {
         bookingService.approve(testUser.getId(), firstBooking.getId(), true);
         BookingDto secondBooking = bookingService.create(secondTestUser.getId(), secondBookingShortDto);
 
-        List<BookingDto> bookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "ALL", 0, 3);
+        List<BookingDto> bookings = bookingService.findAllBookingsOfItems(testUser.getId(), "ALL", 0, 3);
 
         assertThat(bookings.size(), equalTo(bookingDtos.size()));
         for (BookingShortDto dto : bookingDtos) {
@@ -156,7 +156,7 @@ public class BookingServiceImplTest {
                     hasProperty("end", equalTo(dto.getEnd())))));
         }
 
-        List<BookingDto> approvedBookings = bookingService.findAllBookingsOfItemsOwner(
+        List<BookingDto> approvedBookings = bookingService.findAllBookingsOfItems(
                 testUser.getId(), "WAITING", 0, 3);
 
         BookingDto waitingBooking = approvedBookings.get(0);
@@ -280,7 +280,7 @@ public class BookingServiceImplTest {
         BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
         bookingService.approve(testUser.getId(), firstBooking.getId(), true);
 
-        List<BookingDto> currentBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "CURRENT", 0, 3);
+        List<BookingDto> currentBookings = bookingService.findAllBookingsOfItems(testUser.getId(), "CURRENT", 0, 3);
         BookingDto currentBooking = currentBookings.get(0);
 
         assertThat(currentBookings.size(), equalTo(bookingDtos.size()));
@@ -299,7 +299,7 @@ public class BookingServiceImplTest {
         BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
         bookingService.approve(testUser.getId(), firstBooking.getId(), true);
 
-        List<BookingDto> futureBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "FUTURE", 0, 3);
+        List<BookingDto> futureBookings = bookingService.findAllBookingsOfItems(testUser.getId(), "FUTURE", 0, 3);
         BookingDto futureBooking = futureBookings.get(0);
 
         assertThat(futureBookings.size(), equalTo(bookingDtos.size()));
@@ -318,7 +318,7 @@ public class BookingServiceImplTest {
         BookingDto firstBooking = bookingService.create(secondTestUser.getId(), bookingDto);
         bookingService.approve(testUser.getId(), firstBooking.getId(), true);
 
-        List<BookingDto> pastBookings = bookingService.findAllBookingsOfItemsOwner(testUser.getId(), "PAST", 0, 3);
+        List<BookingDto> pastBookings = bookingService.findAllBookingsOfItems(testUser.getId(), "PAST", 0, 3);
         BookingDto pastBooking = pastBookings.get(0);
 
         assertThat(pastBookings.size(), equalTo(bookingDtos.size()));
@@ -329,7 +329,7 @@ public class BookingServiceImplTest {
     @Test
     void getAllOwnerBookingsUserHasNothingTest() {
         final BadRequestException exception = Assertions.assertThrows(BadRequestException.class,
-                () -> bookingService.findAllBookingsOfItemsOwner(secondTestUser.getId(), "ALL", 0, 3));
+                () -> bookingService.findAllBookingsOfItems(secondTestUser.getId(), "ALL", 0, 3));
         Assertions.assertEquals("У пользователя нет ни одной вещи!", exception.getMessage());
     }
 

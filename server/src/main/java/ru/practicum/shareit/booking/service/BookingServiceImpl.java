@@ -124,14 +124,15 @@ public class BookingServiceImpl implements BookingService {
                 log.info("Found all bookings with state 'REJECTED' made by user with id={}.", userId);
                 break;
             default:
-                throw new BadRequestException("Bad request (invalid state of booking).");
+                throw new UnsupportedStatus("Unsupported status (unknown state of booking).");
         }
+
         return bookingList.stream()
                 .map(bookingMapper::toBookingDto)
                 .collect(Collectors.toList());
     }
 
-    public List<BookingDto> findAllBookingsOfItemsOwner(Long userId, String text, Integer start, Integer size) {
+    public List<BookingDto> findAllBookingsOfItems(Long userId, String text, Integer start, Integer size) {
         BookingState state = BookingState.getStateFromText(text);
         LocalDateTime dateTime = LocalDateTime.now();
         List<Booking> bookingList;

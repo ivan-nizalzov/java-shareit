@@ -66,7 +66,7 @@ public class BookingController {
             @RequestParam(required = false, defaultValue = "0") Integer from,
             @RequestParam(required = false, defaultValue = "10") Integer size) {
 
-        return ResponseEntity.ok(bookingService.findAllBookingsOfItemsOwner(userId, state, from, size));
+        return ResponseEntity.ok(bookingService.findAllBookingsOfItems(userId, state, from, size));
     }
 
 }
