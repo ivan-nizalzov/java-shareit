@@ -1,6 +1,7 @@
 package ru.practicum.shareit.request.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +17,11 @@ import ru.practicum.shareit.request.dto.ItemRequestDto;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 
+@Slf4j
 @Validated
 @RestController
 @RequestMapping(path = "/requests")
@@ -27,31 +30,35 @@ public class ItemRequestController {
     private final ItemRequestClient itemRequestClient;
 
     @PostMapping
-    public ResponseEntity<Object> create(@RequestHeader(USER_HEADER) Long userId,
+    public ResponseEntity<Object> create(@RequestHeader(USER_HEADER) @NotNull Long userId,
                                          @Valid @RequestBody ItemRequestDto itemRequestDto) {
 
-        return ResponseEntity.ok(itemRequestClient.create(userId, itemRequestDto));
+        log.info("Creating item request {}", itemRequestDto);
+        return itemRequestClient.create(userId, itemRequestDto);
     }
 
     @GetMapping
-    public ResponseEntity<Object> findAllRequestsOfUser(@RequestHeader(USER_HEADER) Long userId) {
-        return ResponseEntity.ok(itemRequestClient.findAllRequestsOfUser(userId));
+    public ResponseEntity<Object> findAllRequestsOfUser(@RequestHeader(USER_HEADER) @NotNull Long userId) {
+        log.info("Finding all requests of user with id={}", userId);
+        return itemRequestClient.findAllRequestsOfUser(userId);
     }
 
     @GetMapping("/all")
     public ResponseEntity<Object> findAllRequestsExceptYours(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
             @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
 
-        return ResponseEntity.ok(itemRequestClient.findAllRequestsExceptYours(userId, from, size));
+        log.info("Finding all request except userId={}", userId);
+        return itemRequestClient.findAllRequestsExceptYours(userId, from, size);
     }
 
     @GetMapping("{requestId}")
-    public ResponseEntity<Object> findById(@RequestHeader(USER_HEADER) Long userId,
+    public ResponseEntity<Object> findById(@RequestHeader(USER_HEADER) @NotNull Long userId,
                                    @PathVariable Long requestId) {
 
-        return ResponseEntity.ok(itemRequestClient.findById(userId, requestId));
+        log.info("Finding item request with id={}, userId={}", requestId, userId);
+        return itemRequestClient.findById(userId, requestId);
     }
 
 }

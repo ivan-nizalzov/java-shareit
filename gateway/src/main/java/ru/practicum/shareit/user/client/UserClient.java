@@ -3,6 +3,7 @@ package ru.practicum.shareit.user.client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,10 @@ public class UserClient extends BaseClient {
     }
 
     public ResponseEntity<Object> create(UserDto userDto) {
+        if (userDto.getEmail() == null || userDto.getName() == null) {
+            return new ResponseEntity<>("Wrong request", HttpStatus.BAD_REQUEST);
+        }
+
         return post("", userDto);
     }
 
@@ -40,8 +45,8 @@ public class UserClient extends BaseClient {
         return get("");
     }
 
-    public void delete(Long id) {
-        delete("/" + id);
+    public ResponseEntity<Object> delete(Long id) {
+        return delete("/" + id);
     }
 
 }

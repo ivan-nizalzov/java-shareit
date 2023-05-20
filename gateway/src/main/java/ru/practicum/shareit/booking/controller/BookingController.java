@@ -20,6 +20,7 @@ import ru.practicum.shareit.exception.UnsupportedStatus;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 
@@ -32,25 +33,28 @@ public class BookingController {
     private final BookingClient bookingClient;
 
     @PostMapping
-    public ResponseEntity<Object> createBooking(@RequestHeader(USER_HEADER) Long userId,
-                                                   @Valid @RequestBody BookingDto bookingDto) {
+    public ResponseEntity<Object> create(@RequestHeader(USER_HEADER) @NotNull Long userId,
+                                         @Valid @RequestBody BookingDto bookingDto) {
 
-        return ResponseEntity.ok(bookingClient.bookItem(userId, bookingDto));
+        log.info("Creating booking {}, userId={}", bookingDto, userId);
+        return bookingClient.create(userId, bookingDto);
     }
 
     @PatchMapping("/{bookingId}")
-    public ResponseEntity<Object> approveBooking(@RequestHeader(USER_HEADER) Long userId,
+    public ResponseEntity<Object> approveBooking(@RequestHeader(USER_HEADER) @NotNull Long userId,
                                      @PathVariable Long bookingId,
                                      @RequestParam(name = "approved") Boolean approved) {
 
-        return ResponseEntity.ok(bookingClient.approve(userId, bookingId, approved));
+        log.info("Approving booking with id={}, userId={}", bookingId, userId);
+        return bookingClient.approve(userId, bookingId, approved);
     }
 
     @GetMapping("/{bookingId}")
-    public ResponseEntity<Object> findById(@RequestHeader(USER_HEADER) Long userId,
+    public ResponseEntity<Object> findById(@RequestHeader(USER_HEADER) @NotNull Long userId,
                                @PathVariable Long bookingId) {
 
-        return ResponseEntity.ok(bookingClient.findById(userId, bookingId));
+        log.info("Find booking {}, userId={}", bookingId, userId);
+        return bookingClient.findById(userId, bookingId);
     }
 
     @GetMapping
@@ -63,7 +67,9 @@ public class BookingController {
         BookingState state = BookingState.from(stateParam)
                 .orElseThrow(() -> new UnsupportedStatus("Unknown state: " + stateParam));
 
-        return ResponseEntity.ok(bookingClient.findAllBookingsMadeByUser(userId, state, from, size));
+        log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
+
+        return bookingClient.findAllBookingsMadeByUser(userId, state, from, size);
     }
 
     @GetMapping("/owner")
@@ -76,6 +82,8 @@ public class BookingController {
         BookingState state = BookingState.from(stateParam)
                 .orElseThrow(() -> new UnsupportedStatus("Unknown state: " + stateParam));
 
-        return ResponseEntity.ok(bookingClient.findAllBookingsOfItemsOwner(userId, state, from, size));
+        log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
+
+        return bookingClient.findAllBookingsOfItemsOwner(userId, state, from, size);
     }
 }

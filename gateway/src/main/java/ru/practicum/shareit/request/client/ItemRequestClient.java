@@ -3,6 +3,7 @@ package ru.practicum.shareit.request.client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,10 @@ public class ItemRequestClient extends BaseClient {
     }
 
     public ResponseEntity<Object> create(Long userId, ItemRequestDto itemRequestDto) {
+        if (itemRequestDto.getDescription() == null) {
+            return new ResponseEntity<>("Wrong request", HttpStatus.BAD_REQUEST);
+        }
+
         return post("", userId, itemRequestDto);
     }
 

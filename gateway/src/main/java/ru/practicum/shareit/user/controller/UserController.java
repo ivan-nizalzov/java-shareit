@@ -2,7 +2,6 @@ package ru.practicum.shareit.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +15,7 @@ import ru.practicum.shareit.user.client.UserClient;
 import ru.practicum.shareit.user.dto.UserDto;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 @Slf4j
 @RestController
@@ -26,29 +26,34 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<Object> create(@Valid @RequestBody UserDto userDto) {
-        return ResponseEntity.ok(userClient.create(userDto));
+        log.info("Creating user {}", userDto);
+        return userClient.create(userDto);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Object> update(@PathVariable Long id,
+    public ResponseEntity<Object> update(@PathVariable @NotNull Long id,
                                           @RequestBody UserDto userDto) {
-        return ResponseEntity.ok(userClient.update(id, userDto));
+
+        log.info("Updating user with id={}", id);
+        return userClient.update(id, userDto);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> findById(@PathVariable Long id) {
-        return ResponseEntity.ok(userClient.findById(id));
+        log.info("Finding user with id={}", id);
+        return userClient.findById(id);
     }
 
     @GetMapping
     public ResponseEntity<Object> findAllUsers() {
-        return ResponseEntity.ok(userClient.findAllUsers());
+        log.info("Finding all users");
+        return userClient.findAllUsers();
     }
-
+ @NotNull
     @DeleteMapping("{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        userClient.delete(id);
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<Object> delete(@PathVariable @NotNull Long id) {
+        log.info("Deleting user with id={}", id);
+       return userClient.delete(id);
     }
 
 }

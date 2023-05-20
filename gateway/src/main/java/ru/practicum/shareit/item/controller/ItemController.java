@@ -19,6 +19,7 @@ import ru.practicum.shareit.item.dto.ItemDto;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 
@@ -32,54 +33,60 @@ public class ItemController {
 
     @PostMapping
     public ResponseEntity<Object> create(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @Valid @RequestBody ItemDto itemDto) {
 
-        return ResponseEntity.ok(itemClient.create(userId, itemDto));
+        log.info("Creating item {}", itemDto);
+        return itemClient.create(userId, itemDto);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<Object> update(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @PathVariable Long id,
             @RequestBody ItemDto itemDto) {
 
-        return ResponseEntity.ok(itemClient.update(userId, id, itemDto));
+        log.info("Updating item with id={}, userId={}", id, userId);
+        return itemClient.update(userId, id, itemDto);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> findById(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @PathVariable Long id) {
 
-        return ResponseEntity.ok(itemClient.findById(userId, id));
+        log.info("Finding item with id={}, userId={}", id, userId);
+        return itemClient.findById(userId, id);
     }
 
     @GetMapping
     public ResponseEntity<Object> findAllItemsOfUser(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
             @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
 
-        return ResponseEntity.ok(itemClient.findAllItemsOfUser(userId, from, size));
+        log.info("Finding all items of user with id={}", userId);
+        return itemClient.findAllItemsOfUser(userId, from, size);
     }
 
     @GetMapping("/search")
     public ResponseEntity<Object> search(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @RequestParam(name = "text") String text,
             @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
             @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
 
-        return ResponseEntity.ok(itemClient.search(userId, text, from, size));
+        log.info("Searching items with request '{}', userId={}", text, userId);
+        return itemClient.search(userId, text, from, size);
     }
 
     @PostMapping("/{id}/comment")
     public ResponseEntity<Object> addComment(
-            @RequestHeader(USER_HEADER) Long userId,
+            @RequestHeader(USER_HEADER) @NotNull Long userId,
             @PathVariable Long id,
             @Valid @RequestBody CommentDto comment) {
 
-        return ResponseEntity.ok(itemClient.addComment(userId, id, comment));
+        log.info("Adding comment to item with id={}, userId={}", id, userId);
+        return itemClient.addComment(userId, id, comment);
     }
 }
