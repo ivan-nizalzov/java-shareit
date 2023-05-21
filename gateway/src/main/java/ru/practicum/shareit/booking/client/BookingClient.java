@@ -15,7 +15,6 @@ import java.util.Map;
 
 @Service
 public class BookingClient extends BaseClient {
-
     private static final String API_PREFIX = "/bookings";
 
     @Autowired
@@ -28,7 +27,7 @@ public class BookingClient extends BaseClient {
         );
     }
 
-    public ResponseEntity<Object> findAllBookingsMadeByUser(long userId, BookingState state, Integer from, Integer size) {
+    public ResponseEntity<Object> getBookings(long userId, BookingState state, Integer from, Integer size) {
         Map<String, Object> parameters = Map.of(
                 "state", state.name(),
                 "from", from,
@@ -53,7 +52,7 @@ public class BookingClient extends BaseClient {
         return patch("/" + bookingId + "?approved={approved}", userId, parameters);
     }
 
-    public ResponseEntity<Object> findAllBookingsOfItemsOwner(Long userId, BookingState state, Integer from, Integer size) {
+    public ResponseEntity<Object> findAllOwnerBookings(Long userId, BookingState state, Integer from, Integer size) {
         Map<String, Object> parameters = Map.of(
                 "state", state.name(),
                 "from", from,

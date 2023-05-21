@@ -21,6 +21,8 @@ import ru.practicum.shareit.exception.UnsupportedStatus;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import javax.validation.constraints.PositiveOrZero;
 
 import static ru.practicum.shareit.user.util.UserHeader.USER_HEADER;
 
@@ -42,8 +44,8 @@ public class BookingController {
 
     @PatchMapping("/{bookingId}")
     public ResponseEntity<Object> approveBooking(@RequestHeader(USER_HEADER) @NotNull Long userId,
-                                     @PathVariable Long bookingId,
-                                     @RequestParam(name = "approved") Boolean approved) {
+                                                 @PathVariable Long bookingId,
+                                                 @RequestParam(name = "approved") Boolean approved) {
 
         log.info("Approving booking with id={}, userId={}", bookingId, userId);
         return bookingClient.approve(userId, bookingId, approved);
@@ -51,7 +53,7 @@ public class BookingController {
 
     @GetMapping("/{bookingId}")
     public ResponseEntity<Object> findById(@RequestHeader(USER_HEADER) @NotNull Long userId,
-                               @PathVariable Long bookingId) {
+                                           @PathVariable Long bookingId) {
 
         log.info("Find booking {}, userId={}", bookingId, userId);
         return bookingClient.findById(userId, bookingId);
@@ -59,23 +61,22 @@ public class BookingController {
 
     @GetMapping
     public ResponseEntity<Object> findAllBookingsMadeByUser(
-            @RequestHeader(USER_HEADER) Long userId,
-            @RequestParam(required = false, defaultValue = "ALL") String stateParam,
-            @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
-            @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
+            @RequestHeader(USER_HEADER) long userId,
+            @RequestParam(name = "state", defaultValue = "all") String stateParam,
+            @PositiveOrZero @RequestParam(name = "from", defaultValue = "0") Integer from,
+            @Positive @RequestParam(name = "size", defaultValue = "10") Integer size) {
 
         BookingState state = BookingState.from(stateParam)
                 .orElseThrow(() -> new UnsupportedStatus("Unknown state: " + stateParam));
 
         log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
-
-        return bookingClient.findAllBookingsMadeByUser(userId, state, from, size);
+        return bookingClient.getBookings(userId, state, from, size);
     }
 
     @GetMapping("/owner")
     public ResponseEntity<Object> findAllBookingsOfItemsOwner(
             @RequestHeader(USER_HEADER) Long userId,
-            @RequestParam(required = false, defaultValue = "ALL") String stateParam,
+            @RequestParam(name = "state", required = false, defaultValue = "ALL") String stateParam,
             @RequestParam(required = false, defaultValue = "0") @Min(0) Integer from,
             @RequestParam(required = false, defaultValue = "10") @Min(1) Integer size) {
 
@@ -84,6 +85,6 @@ public class BookingController {
 
         log.info("Get booking with state {}, userId={}, from={}, size={}", stateParam, userId, from, size);
 
-        return bookingClient.findAllBookingsOfItemsOwner(userId, state, from, size);
+        return bookingClient.findAllOwnerBookings(userId, state, from, size);
     }
 }
